@@ -72,6 +72,21 @@ class PersistentPaperTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             restarted.roll_utc_day(now=tomorrow - timedelta(days=1))
 
+    def test_reconciliation_rejects_tampered_position_risk(self):
+        self.assertTrue(self.orders.reserve("entry", **self.order))
+        self.assertTrue(self.orders.fill("entry", strategy_authorized=True,
+                                         market_data_fresh=True,
+                                         expected_strategy_id="momentum-v1",
+                                         expected_symbol="BTC/USD"))
+        with sqlite3.connect(self.path) as db:
+            row = db.execute("SELECT payload FROM state WHERE id=1").fetchone()
+            payload = json.loads(row[0])
+            payload["positions"][0]["risk_usd"] = 0.01
+            db.execute("UPDATE state SET payload=? WHERE id=1",
+                       (json.dumps(payload),))
+        with self.assertRaises(ValueError):
+            PersistentPaperDesk(self.path)
+
     def test_corrupt_state_fails_closed(self):
         with sqlite3.connect(self.path) as db:
             db.execute("UPDATE state SET payload=?", (json.dumps({
