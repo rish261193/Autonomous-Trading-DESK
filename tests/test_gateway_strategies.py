@@ -27,7 +27,13 @@ class GatewayTests(unittest.TestCase):
     def test_daily_loss(self):
         self.assertFalse(authorize(self.intent, replace(self.state, daily_realized_pnl_usd=-15)).allowed)
 
-    def test_daily_unrealized_loss(self):\n        self.assertFalse(authorize(self.intent, replace(self.state, daily_unrealized_pnl_usd=-15)).allowed)\n\n    def test_daily_combined_loss(self):\n        self.assertFalse(authorize(self.intent, replace(self.state, daily_realized_pnl_usd=-8, daily_unrealized_pnl_usd=-7)).allowed)\n\n    def test_combined_open_risk(self):
+    def test_daily_unrealized_loss(self):
+        self.assertFalse(authorize(self.intent, replace(self.state, daily_unrealized_pnl_usd=-15)).allowed)
+
+    def test_daily_combined_loss(self):
+        self.assertFalse(authorize(self.intent, replace(self.state, daily_realized_pnl_usd=-8, daily_unrealized_pnl_usd=-7)).allowed)
+
+    def test_combined_open_risk(self):
         self.assertFalse(authorize(self.intent, replace(self.state, open_risk_usd=2)).allowed)
 
     def test_no_short(self):
