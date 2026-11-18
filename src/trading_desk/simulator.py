@@ -1,7 +1,7 @@
 """Simplified event-driven research simulator for long-only strategies.
 
 Trades at bar close based on *prior* closes. The simulator does not model
-order-book fills, stop orders, outages, or true session-end liquidation.
+order-book fills, stop orders, or outages. Positions can cross UTC midnight.
 """
 from __future__ import annotations
 from dataclasses import dataclass, asdict
@@ -49,7 +49,7 @@ def simulate(bars: Sequence[Bar], spec: SignalSpec, costs: Costs = Costs(),
             paid += fee
             units = 0.0
             trades += 1
-        if not day_change and i != len(bars)-1:
+        if i != len(bars)-1:
             long_signal = signal_at(closes, i, spec)
             if long_signal and not units:
                 fee = cash * charge / (1 + charge)
