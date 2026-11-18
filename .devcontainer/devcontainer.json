@@ -1,0 +1,5 @@
+{
+  "name": "Autonomous Trading DESK",
+  "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
+  "postCreateCommand": "pip install -e . && python -m unittest discover -s tests -v"
+}
