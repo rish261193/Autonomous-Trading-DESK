@@ -1,0 +1,78 @@
+name: CCXT Kraken public-data integration
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/ccxt-kraken-integration.yml"
+      - "src/trading_desk/ccxt_market_data.py"
+      - "tests/test_ccxt_market_data.py"
+      - "pyproject.toml"
+  push:
+    branches: [feature/reuse-ccxt-validation]
+    paths:
+      - ".github/workflows/ccxt-kraken-integration.yml"
+      - "src/trading_desk/ccxt_market_data.py"
+      - "tests/test_ccxt_market_data.py"
+      - "pyproject.toml"
+
+permissions:
+  contents: read
+
+jobs:
+  kraken-public-ohlcv:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Download and verify pinned CCXT wheel
+        shell: bash
+        run: |
+          python -m pip download --only-binary=:all: --no-deps --dest /tmp/ccxt-wheel ccxt==4.5.93
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib
+          wheels = list(Path('/tmp/ccxt-wheel').glob('ccxt-4.5.93-*.whl'))
+          assert len(wheels) == 1, f"Expected exactly one CCXT wheel, found {len(wheels)}"
+          actual = hashlib.sha256(wheels[0].read_bytes()).hexdigest()
+          expected = '214d1a0379b5539fa29936e03cbe12d78c55a58df8f225d59f9fc3ad72805b53'
+          assert actual == expected, f"CCXT wheel SHA-256 mismatch: {actual}"
+          print('CCXT 4.5.93 wheel SHA-256 verified')
+          PY
+          python -m pip install /tmp/ccxt-wheel/*.whl
+          python -m pip install -e .
+          python -m pip check
+          python -c "import ccxt; print('Installed CCXT:', ccxt.__version__)"
+      - name: Run CCXT adapter unit tests
+        run: python -m unittest discover -s tests -p 'test_ccxt_market_data.py' -v
+      - name: Validate live public Kraken BTC and ETH candles
+        env:
+          PYTHONPATH: src
+        run: |
+          python - <<'PY'
+          from datetime import datetime, timezone
+          from pathlib import Path
+          import json
+          import ccxt
+          from trading_desk.ccxt_market_data import fetch_public_hourly, save_ohlcv
+          exchange = ccxt.kraken({'enableRateLimit': True, 'timeout': 20000})
+          try:
+              exchange.load_markets()
+              for symbol, name in [('BTC/USD', 'btc'), ('ETH/USD', 'eth')]:
+                  now_ms = exchange.milliseconds()
+                  rows, metadata = fetch_public_hourly(symbol, exchange=exchange, now_ms=now_ms)
+                  assert len(rows) >= 2, f'{symbol}: insufficient completed candles'
+                  assert rows[-1][0] + 3600000 <= now_ms, f'{symbol}: unfinished candle included'
+                  assert metadata['completed_candles'] == len(rows)
+                  manifest = save_ohlcv(rows, metadata, output_prefix=f'/tmp/kraken-{name}')
+                  assert len(manifest['data_sha256']) == 64
+                  print(json.dumps({'symbol': symbol, 'count': len(rows),
+                      'first': metadata['first_timestamp'], 'last': metadata['last_timestamp'],
+                      'sha256': manifest['data_sha256']}, sort_keys=True))
+          finally:
+              exchange.close()
+          PY

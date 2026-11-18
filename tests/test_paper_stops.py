@@ -31,6 +31,8 @@ class PaperStopTests(unittest.TestCase):
 
     def test_stop_mark_and_close_record_one_event(self):
         import sqlite3
+        with sqlite3.connect(self.desk.path) as db:
+            baseline = db.execute("SELECT COUNT(*) FROM events WHERE kind='stop_mark'").fetchone()[0]
         result = process_stop_observation(
             self.controller, PriceObservation("BTC/USD", 90, self.now), now=self.now)
         self.assertEqual(result.triggered, 1)
@@ -38,7 +40,7 @@ class PaperStopTests(unittest.TestCase):
             events = [row[0] for row in db.execute(
                 "SELECT kind FROM events ORDER BY seq")]
         self.assertEqual(events[-1], "stop_mark")
-        self.assertEqual(events.count("stop_mark"), 1)
+        self.assertEqual(events.count("stop_mark"), baseline + 1)
 
     def test_no_exit_above_stop(self):
         result = process_stop_observation(

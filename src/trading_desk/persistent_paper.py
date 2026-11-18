@@ -190,7 +190,8 @@ class PersistentPaperDesk:
         """Roll at most once per UTC calendar date, transactionally with the ledger."""
         if now is None:
             now = datetime.now(timezone.utc)
-        if not isinstance(now, datetime) or now.tzinfo is None:
+        if (not isinstance(now, datetime) or now.tzinfo is None or
+                now.utcoffset() is None):
             raise ValueError("UTC-aware datetime required")
         today = now.astimezone(timezone.utc).date().isoformat()
         with self._connect() as db:

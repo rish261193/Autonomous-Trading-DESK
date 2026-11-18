@@ -33,9 +33,12 @@ class GuardedPaperController:
         self.max_age_seconds = max_age_seconds
 
     def valid_observation(self, observation: PriceObservation, *, now: datetime) -> bool:
-        if (not isinstance(now, datetime) or now.tzinfo is None or
+        if (not isinstance(observation, PriceObservation) or
+                not isinstance(now, datetime) or now.tzinfo is None or
+                now.utcoffset() is None or
                 not isinstance(observation.timestamp, datetime) or
                 observation.timestamp.tzinfo is None or
+                observation.timestamp.utcoffset() is None or
                 observation.symbol not in {"BTC/USD", "ETH/USD"} or
                 type(observation.price) not in (int, float) or
                 not isfinite(observation.price) or observation.price <= 0):
@@ -49,13 +52,17 @@ class GuardedPaperController:
     def observe(self, observation: PriceObservation, *, now: datetime) -> bool:
         if not self.valid_observation(observation, now=now):
             return False
-        self.desk.mark(observation.symbol, observation.price)
+        # Apply the mark and any triggered stops in the same database transaction.
+        # A plain mark here could leave a breached stop open until another worker runs.
+        self.desk.apply_stop_mark(observation.symbol, observation.price)
         return True
 
     def reserve(self, order_id: str, *, strategy_id: str, symbol: str,
                 price: float, stop_price: float, quantity: float,
                 observation: PriceObservation, now: datetime) -> bool:
         if strategy_id not in self.approved_strategies:
+            return False
+        if not isinstance(observation, PriceObservation):
             return False
         if observation.symbol != symbol or observation.price != price:
             return False
