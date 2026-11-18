@@ -4,6 +4,12 @@ on:
   pull_request:
 permissions:
   contents: read
+
+# A branch can receive several commits while an earlier matrix is still running.
+# Keep only the newest run for each ref/event; never cancel main's checks.
+concurrency:
+  group: unit-tests-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   test:
     name: Python ${{ matrix.python-version }}
