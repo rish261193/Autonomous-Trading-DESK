@@ -98,6 +98,26 @@ class PersistentPaperDesk:
         from math import isfinite
         with self._connect() as db:
             desk = self._load(db)
+            if db.execute("SELECT name FROM sqlite_master WHERE type='table' AND name='reservations'").fetchone():
+                pending_cash = 0.0
+                pending_risk = 0.0
+                for payload_text, status in db.execute("SELECT payload,status FROM reservations"):
+                    payload = json.loads(payload_text)
+                    if (status not in ("pending", "filled", "cancelled") or
+                        payload.get("symbol") not in {"BTC/USD", "ETH/USD"} or
+                        not isinstance(payload.get("strategy_id"), str)):
+                        raise ValueError("Corrupt reservation")
+                    price, stop, qty = (payload.get(k) for k in ("price", "stop_price", "quantity"))
+                    if (not all(type(v) in (int, float) and isfinite(v) and v > 0
+                                for v in (price, stop, qty)) or stop >= price or
+                        abs(payload.get("notional", -1) - price * qty) > 1e-7 or
+                        abs(payload.get("risk", -1) - (price - stop) * qty) > 1e-7):
+                        raise ValueError("Corrupt reservation economics")
+                    if status == "pending":
+                        pending_cash += payload["notional"]
+                        pending_risk += payload["risk"]
+                if pending_cash > desk.cash_usd + 1e-7:
+                    raise ValueError("Pending cash exceeds balance")
             if any(p.symbol not in {"BTC/USD", "ETH/USD"} or
                    not all(isfinite(v) and v > 0 for v in (p.quantity, p.entry_price, p.stop_price, p.risk_usd)) or
                    p.stop_price >= p.entry_price or
