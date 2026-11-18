@@ -1,5 +1,5 @@
 """Deterministic paper-trading risk checks; no broker connectivity."""
-from dataclasses import dataclass
+from dataclasses import dataclass\nfrom math import isfinite
 
 
 @dataclass(frozen=True)
