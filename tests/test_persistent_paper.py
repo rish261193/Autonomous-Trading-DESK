@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from trading_desk.persistent_paper import PersistentPaperDesk
+from trading_desk.pending_orders import PendingOrders
 
 
 class PersistentPaperTests(unittest.TestCase):
@@ -17,15 +18,17 @@ class PersistentPaperTests(unittest.TestCase):
                           price=100, stop_price=95, quantity=1,
                           strategy_authorized=True, market_data_fresh=True)
         self.desk.mark("BTC/USD", 100)
+        self.orders = PendingOrders(self.desk)
 
     def test_restart_recovers_cash_positions_and_marks(self):
-        self.assertTrue(self.desk.enter(**self.order))
+        self.assertTrue(self.orders.reserve("entry", **self.order))
+        self.assertTrue(self.orders.fill("entry"))
         restarted = PersistentPaperDesk(self.path)
         state = restarted.snapshot()
         self.assertEqual(state.cash_usd, 400)
         self.assertEqual(len(state.positions), 1)
         self.assertEqual(state.marks["BTC/USD"], 100)
-        self.assertFalse(restarted.enter(**self.order))
+        self.assertFalse(PendingOrders(restarted).reserve("entry", **self.order))
 
     def test_kill_switch_persists_across_restart(self):
         self.desk.halt()
@@ -34,11 +37,12 @@ class PersistentPaperTests(unittest.TestCase):
         self.assertFalse(restarted.enter(**self.order))
 
     def test_rejected_order_does_not_mutate_balances(self):
-        self.assertFalse(self.desk.enter(**(self.order | {"quantity": 2})))
+        self.assertFalse(self.orders.reserve("entry", **(self.order | {"quantity": 2})))
         self.assertEqual(PersistentPaperDesk(self.path).snapshot().cash_usd, 500)
 
     def test_close_persists_realized_pnl(self):
-        self.assertTrue(self.desk.enter(**self.order))
+        self.assertTrue(self.orders.reserve("entry", **self.order))
+        self.assertTrue(self.orders.fill("entry"))
         self.desk.mark("BTC/USD", 102)
         self.assertEqual(self.desk.close(0, 102), 2)
         state = PersistentPaperDesk(self.path).snapshot()
@@ -47,7 +51,8 @@ class PersistentPaperTests(unittest.TestCase):
         self.assertEqual(len(state.positions), 0)
 
     def test_daily_reset_preserves_positions(self):
-        self.assertTrue(self.desk.enter(**self.order))
+        self.assertTrue(self.orders.reserve("entry", **self.order))
+        self.assertTrue(self.orders.fill("entry"))
         self.desk.mark("BTC/USD", 102)
         self.desk.reset_daily_baseline()
         state = PersistentPaperDesk(self.path).snapshot()
@@ -65,10 +70,11 @@ class PersistentPaperTests(unittest.TestCase):
             PersistentPaperDesk(self.path)
 
     def test_event_log_tracks_changes(self):
-        self.assertTrue(self.desk.enter(**self.order))
+        self.assertTrue(self.orders.reserve("entry", **self.order))
+        self.assertTrue(self.orders.fill("entry"))
         with sqlite3.connect(self.path) as db:
             events = [row[0] for row in db.execute("SELECT kind FROM events ORDER BY seq")]
-        self.assertEqual(events, ["initialize", "mark", "enter"])
+        self.assertEqual(events, ["initialize", "mark", "reserve", "fill"])
 
 
 if __name__ == "__main__":
