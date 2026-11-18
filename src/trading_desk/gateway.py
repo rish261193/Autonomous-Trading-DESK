@@ -46,15 +46,15 @@ def authorize(intent: OrderIntent, state: GatewayState,
     """Reject unknown, unsafe, stale, or unauthorized requests by default."""
     if state.kill_switch:
         return GatewayDecision(False, "Kill switch active")
-    if not state.strategy_authorized:
+    if state.strategy_authorized is not True:
         return GatewayDecision(False, "Strategy not authorized")
-    if not state.market_data_fresh:
+    if state.market_data_fresh is not True:
         return GatewayDecision(False, "Market data stale")
     values = (intent.notional_usd, intent.worst_case_loss_usd, state.equity_usd,
               state.day_start_equity_usd, state.daily_realized_pnl_usd, state.open_risk_usd,
               state.daily_unrealized_pnl_usd,
               limits.max_risk_fraction, limits.max_daily_loss_fraction)
-    if not all(isfinite(x) for x in values):
+    if not all(type(x) in (int, float) and isfinite(x) for x in values):
         return GatewayDecision(False, "Non-finite input")
     if (state.equity_usd <= 0 or state.day_start_equity_usd <= 0 or
         intent.notional_usd <= 0 or intent.worst_case_loss_usd <= 0 or
