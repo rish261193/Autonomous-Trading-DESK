@@ -32,6 +32,7 @@ class GatewayState:
     kill_switch: bool
     strategy_authorized: bool
     market_data_fresh: bool
+    daily_unrealized_pnl_usd: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -50,7 +51,7 @@ def authorize(intent: OrderIntent, state: GatewayState,
     if not state.market_data_fresh:
         return GatewayDecision(False, "Market data stale")
     values = (intent.notional_usd, intent.worst_case_loss_usd, state.equity_usd,
-              state.day_start_equity_usd, state.daily_realized_pnl_usd, state.open_risk_usd,
+              state.day_start_equity_usd, state.daily_realized_pnl_usd, state.open_risk_usd,\n              state.daily_unrealized_pnl_usd,
               limits.max_risk_fraction, limits.max_daily_loss_fraction)
     if not all(isfinite(x) for x in values):
         return GatewayDecision(False, "Non-finite input")
