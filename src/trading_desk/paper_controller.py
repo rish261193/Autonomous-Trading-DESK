@@ -6,7 +6,7 @@ price observations. This module does not authenticate a remote market-data feed.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from math import isfinite
 
 from .pending_orders import PendingOrders
@@ -74,7 +74,10 @@ class GuardedPaperController:
         """Require a new fresh observation and currently approved strategy at fill."""
         if strategy_id not in self.approved_strategies:
             return False
-        if not self.observe(observation, now=now):
+        if not self.valid_observation(observation, now=now):
+            return False
+        # A fill must not silently move the mark; price must match the reservation.
+        if self.desk.snapshot().marks.get(observation.symbol) != observation.price:
             return False
         return self.orders.fill(order_id, strategy_authorized=True,
                                 market_data_fresh=True,
