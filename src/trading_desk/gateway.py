@@ -51,7 +51,8 @@ def authorize(intent: OrderIntent, state: GatewayState,
     if not state.market_data_fresh:
         return GatewayDecision(False, "Market data stale")
     values = (intent.notional_usd, intent.worst_case_loss_usd, state.equity_usd,
-              state.day_start_equity_usd, state.daily_realized_pnl_usd, state.open_risk_usd,\n              state.daily_unrealized_pnl_usd,
+              state.day_start_equity_usd, state.daily_realized_pnl_usd, state.open_risk_usd,
+              state.daily_unrealized_pnl_usd,
               limits.max_risk_fraction, limits.max_daily_loss_fraction)
     if not all(isfinite(x) for x in values):
         return GatewayDecision(False, "Non-finite input")
@@ -66,7 +67,8 @@ def authorize(intent: OrderIntent, state: GatewayState,
         return GatewayDecision(False, "Spot-only buy intents supported")
     if intent.notional_usd > state.equity_usd:
         return GatewayDecision(False, "Notional exceeds equity")
-    if state.daily_realized_pnl_usd <= -state.day_start_equity_usd * limits.max_daily_loss_fraction:
+    if (state.daily_realized_pnl_usd + state.daily_unrealized_pnl_usd
+            <= -state.day_start_equity_usd * limits.max_daily_loss_fraction):
         return GatewayDecision(False, "Daily loss threshold breached")
     if intent.worst_case_loss_usd + state.open_risk_usd > state.equity_usd * limits.max_risk_fraction:
         return GatewayDecision(False, "Total open risk exceeds one percent")
