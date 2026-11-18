@@ -1,13 +1,15 @@
 """Regression tests for fail-closed paper observation validation."""
 import unittest
 from datetime import datetime, timezone
+from unittest.mock import patch
 from trading_desk.paper_controller import GuardedPaperController, PriceObservation
 
 
 class ObservationSafetyTests(unittest.TestCase):
     def setUp(self):
         # No persistent desk needed: invalid inputs must be rejected before side effects.
-        self.controller = GuardedPaperController(None, frozenset({"approved"}))
+        with patch("trading_desk.paper_controller.PendingOrders"):
+            self.controller = GuardedPaperController(None, frozenset({"approved"}))
         self.now = datetime(2026, 11, 18, 20, 0, tzinfo=timezone.utc)
 
     def test_none_observation_rejected(self):
