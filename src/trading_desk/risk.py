@@ -1,5 +1,6 @@
 """Deterministic paper-trading risk checks; no broker connectivity."""
-from dataclasses import dataclass\nfrom math import isfinite
+from dataclasses import dataclass
+from math import isfinite
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,9 @@ def check_proposed_risk(equity: float, proposed_risk_usd: float, realized_daily_
     This is a bootstrap check, not a production risk gateway. It does not
     account for open-position exposure, slippage, fills, or pending orders.
     """
+    if not all(isfinite(v) for v in (equity, proposed_risk_usd, realized_daily_pnl,
+                                     limits.max_trade_risk_fraction, limits.max_daily_loss_fraction)):
+        return RiskDecision(False, "Non-finite risk inputs")
     if equity <= 0 or proposed_risk_usd <= 0:
         return RiskDecision(False, "Equity and proposed risk must be positive")
     if not (0 < limits.max_trade_risk_fraction < 1 and 0 < limits.max_daily_loss_fraction < 1):
