@@ -42,6 +42,24 @@ class ResearchTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             backtest(list(reversed(bars())), 3, 12)
 
+    def test_reject_nonfinite_and_excessive_costs(self):
+        for value in (float("nan"), float("inf"), float("-inf")):
+            with self.subTest(value=value):
+                with self.assertRaises(ValueError):
+                    backtest(bars(), 3, 12, Costs(value, 0))
+                with self.assertRaises(ValueError):
+                    backtest(bars(), 3, 12, initial_equity=value)
+        for fees in (-1, 10000, 11000):
+            with self.subTest(fees=fees):
+                with self.assertRaises(ValueError):
+                    backtest(bars(), 3, 12, Costs(fees, 0))
+
+    def test_reject_noninteger_windows(self):
+        for fast, slow in ((True, 12), (3.0, 12), (3, False), (3, 12.0)):
+            with self.subTest(fast=fast, slow=slow):
+                with self.assertRaises(ValueError):
+                    backtest(bars(), fast, slow)
+
     def test_csv_requires_timezone(self):
         with tempfile.TemporaryDirectory() as d:
             p = Path(d) / "bars.csv"
