@@ -1,6 +1,6 @@
 # Phase 2: guarded paper ledger (work in progress)
 
-The `PaperDesk` class is an **in-memory, single-process research prototype**. It is not connected to a broker, exchange, market-data feed, or strategy simulator.
+The `PaperDesk` class is an **in-memory, single-process research prototype**. `PersistentPaperDesk` wraps it in a file-backed SQLite transactional snapshot and append-only (but not tamper-proof) event log. It is not connected to a broker, exchange, market-data feed, or strategy simulator.
 
 ## Implemented
 - BTC/USD and ETH/USD long-only entries, with deterministic `gateway.authorize` on every entry
@@ -12,7 +12,7 @@ The `PaperDesk` class is an **in-memory, single-process research prototype**. It
 
 ## Not implemented — blockers
 - No trusted market-data timestamps, freshness verifier, or authenticated strategy authorization
-- No persisted or tamper-evident ledger; restart loses positions and kill switch
+- SQLite now persists snapshots, event history, positions and kill switch across restarts, but events are not tamper-evident and recovery has not been independently crash-tested
 - No broker/order reconciliation, pending-order accounting, idempotency, partial fills, fees, or concurrency protection
 - No automatic stop execution, gaps/slippage modeling, or guarantee that stop-defined losses are bounded
 - No automated UTC-day boundary detection; caller explicitly resets baseline
