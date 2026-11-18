@@ -29,6 +29,6 @@ The example assumes you have a suitably large, timezone-aware CSV file. No datas
 
 ## Limitations
 
-This is an **offline research prototype**, not a live or paper-trading execution engine. The underlying SMA backtester has simplified close-price fills, no stop-loss enforcement, and only approximate overnight liquidation. Its research outcomes cannot be used as evidence of sustainable profitability. Each rolling window is evaluated independently rather than as a stitched equity curve. A two-point equity return is included as a summary, not as a valid volatility or Sharpe estimate.
+This is an **offline research prototype**, not a live or paper-trading execution engine. The underlying SMA backtester has simplified close-price fills, no stop-loss enforcement, and no mandatory midnight liquidation; positions may cross UTC dates. Its research outcomes cannot be used as evidence of sustainable profitability. Each rolling window is evaluated independently rather than as a stitched equity curve. A two-point equity return is included as a summary, not as a valid volatility or Sharpe estimate.
 
-Before considering paper execution, implement event-driven realistic fills, verified flat-by-session-end enforcement, robust position sizing, risk gateway integration, and independent evaluation on real market data.
+Before considering paper execution, implement event-driven realistic fills, 24/7 position monitoring and UTC daily loss accounting, robust position sizing, risk gateway integration, and independent evaluation on real market data.
