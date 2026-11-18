@@ -18,3 +18,7 @@ The strategy worker and paper service MUST run under separate OS identities or i
 - The HTTP API currently reserves only; a controlled fill workflow remains to be designed and tested.
 - CI green verifies unit tests, not production security or profitability.
 - No live trading; `main` unchanged.
+
+## Independent quote validator (not yet wired into deployment)
+
+`CorroboratedPriceSource` accepts two separately configured source adapters and fails closed on mismatched symbols, stale/future timestamps, disagreement beyond 0.5% by default, feed errors and regressed timestamps. It is a reusable validator, **not** a live secondary exchange integration. The current Kraken Ticker adapter uses local receipt time rather than exchange event time; wiring two receipt-timestamped ticker sources would not meet F-02's exchange-timestamp provenance requirement. A future deployment must supply independently sourced, exchange-timestamped events and test disconnect recovery and persisted monotonic sequence checks.
