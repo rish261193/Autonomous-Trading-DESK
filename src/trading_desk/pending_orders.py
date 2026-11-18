@@ -24,7 +24,10 @@ class PendingOrders:
 
     def reserve(self, order_id, *, strategy_id, symbol, price, stop_price,
                 quantity, strategy_authorized, market_data_fresh):
-        if not isinstance(order_id, str) or not 0 < len(order_id) <= 128:
+        if (not isinstance(order_id, str) or not 0 < len(order_id) <= 128 or
+                strategy_authorized is not True or market_data_fresh is not True or
+                not isinstance(strategy_id, str) or not strategy_id.strip() or
+                symbol not in {"BTC/USD", "ETH/USD"}):
             return False
         values = (price, stop_price, quantity)
         if not all(type(v) in (int, float) and math.isfinite(v) and v > 0 for v in values):
