@@ -22,3 +22,7 @@ The strategy worker and paper service MUST run under separate OS identities or i
 ## Independent quote validator (not yet wired into deployment)
 
 `CorroboratedPriceSource` accepts two separately configured source adapters and fails closed on mismatched symbols, stale/future timestamps, disagreement beyond 0.5% by default, feed errors and regressed timestamps. It is a reusable validator, **not** a live secondary exchange integration. The current Kraken Ticker adapter uses local receipt time rather than exchange event time; wiring two receipt-timestamped ticker sources would not meet F-02's exchange-timestamp provenance requirement. A future deployment must supply independently sourced, exchange-timestamped events and test disconnect recovery and persisted monotonic sequence checks.
+
+## Market-data circuit breaker (new, not yet deployed)
+
+`MarketDataCircuitBreaker` wraps a source and halts future source calls after three consecutive exceptions by default; an owner-only method resets it. When used as the `TrustedPaperIntentService` price source, failed observations reject new reservations and fills. This is an **in-memory source-level halt**, not the persistent ledger kill switch: process restarts clear its state, and it does not automatically call `PersistentPaperDesk.halt()`. Deployment must persist the halt, test watchdog behavior during idle periods, and ensure existing position management remains safe during feed loss. Do not expose reset through the strategy HTTP API.
