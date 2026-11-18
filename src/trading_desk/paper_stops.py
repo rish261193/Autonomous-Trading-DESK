@@ -19,18 +19,7 @@ class StopResult:
 def process_stop_observation(controller: GuardedPaperController,
                              observation: PriceObservation, *, now) -> StopResult:
     """Apply fresh marks and close stopped positions at observed paper price."""
-    if not controller.observe(observation, now=now):
+    if not controller.valid_observation(observation, now=now):
         raise ValueError("Untrusted or stale stop observation")
-    triggered = 0
-    pnl = 0.0
-    # Re-read each time; position indices change after a close.
-    while True:
-        desk = controller.desk.snapshot()
-        index = next((i for i, position in enumerate(desk.positions)
-                      if position.symbol == observation.symbol and
-                      observation.price <= position.stop_price), None)
-        if index is None:
-            break
-        pnl += controller.desk.close(index, observation.price)
-        triggered += 1
-    return StopResult(triggered, pnl)
+    count, pnl = controller.desk.apply_stop_mark(observation.symbol, observation.price)
+    return StopResult(count, pnl)
