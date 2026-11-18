@@ -34,6 +34,7 @@ class PendingOrders:
             return False
         if stop_price >= price:
             return False
+        self.desk.roll_utc_day()
         with self.desk._connect() as db:
             db.execute("BEGIN IMMEDIATE")
             if db.execute("SELECT 1 FROM reservations WHERE order_id=?",
@@ -93,6 +94,7 @@ class PendingOrders:
         """Synthetic fill; require renewed authorization and freshness."""
         if strategy_authorized is not True or market_data_fresh is not True:
             return False
+        self.desk.roll_utc_day()
         with self.desk._connect() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute(
