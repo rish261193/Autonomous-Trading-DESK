@@ -64,6 +64,12 @@ class GuardedPaperController:
     def cancel(self, order_id: str) -> bool:
         return self.orders.cancel(order_id)
 
-    def fill(self, order_id: str) -> bool:
-        """No unattended fills: caller must separately verify source freshness."""
-        return self.orders.fill(order_id)
+    def fill(self, order_id: str, *, strategy_id: str, observation: PriceObservation,
+             now: datetime) -> bool:
+        """Require a new fresh observation and currently approved strategy at fill."""
+        if strategy_id not in self.approved_strategies:
+            return False
+        if not self.observe(observation, now=now):
+            return False
+        return self.orders.fill(order_id, strategy_authorized=True,
+                                market_data_fresh=True)
