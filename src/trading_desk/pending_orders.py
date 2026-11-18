@@ -34,6 +34,8 @@ class PendingOrders:
             return False
         if stop_price >= price:
             return False
+        if self.desk.halt_requested():
+            return False
         self.desk.roll_utc_day()
         with self.desk._connect() as db:
             db.execute("BEGIN IMMEDIATE")
@@ -94,6 +96,8 @@ class PendingOrders:
         """Synthetic fill; require renewed authorization and freshness."""
         if strategy_authorized is not True or market_data_fresh is not True:
             return False
+        if self.desk.halt_requested():
+            return False
         self.desk.roll_utc_day()
         with self.desk._connect() as db:
             db.execute("BEGIN IMMEDIATE")
@@ -134,12 +138,15 @@ class PendingOrders:
             entry = {k: payload[k] for k in keys}
             entry["strategy_authorized"] = strategy_authorized
             entry["market_data_fresh"] = market_data_fresh
+            entry["order_id"] = order_id
             if not desk.enter(**entry):
                 db.commit()
                 return False
             self.desk._save(db, desk)
             db.execute("UPDATE reservations SET status='filled' WHERE order_id=?",
                        (order_id,))
-            self.desk._event(db, "fill", {"order_id": order_id})
+            self.desk._event(db, "fill", {"order_id": order_id} | {
+                k: payload[k] for k in ("strategy_id", "symbol", "price",
+                                        "stop_price", "quantity")})
             db.commit()
             return True

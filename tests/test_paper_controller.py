@@ -11,9 +11,11 @@ class PaperControllerTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
-        self.desk = PersistentPaperDesk(str(Path(self.temp.name) / "desk.sqlite"))
-        self.control = GuardedPaperController(self.desk, frozenset({"approved-v1"}))
         self.now = datetime(2026, 11, 18, 12, tzinfo=timezone.utc)
+        # Audit change: deterministic trusted clock injected at construction.
+        self.desk = PersistentPaperDesk(str(Path(self.temp.name) / "desk.sqlite"),
+                                        clock=lambda: self.now)
+        self.control = GuardedPaperController(self.desk, frozenset({"approved-v1"}))
         self.observation = PriceObservation("BTC/USD", 100, self.now)
         self.order = dict(strategy_id="approved-v1", symbol="BTC/USD",
                           price=100, stop_price=95, quantity=1,

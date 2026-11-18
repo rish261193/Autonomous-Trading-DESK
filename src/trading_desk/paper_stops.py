@@ -17,7 +17,7 @@ class StopResult:
 
 
 def process_stop_observation(controller: GuardedPaperController,
-                             observation: PriceObservation, *, now) -> StopResult:
+                             observation: PriceObservation, *, now=None) -> StopResult:
     """Apply fresh marks and close stopped positions at observed paper price."""
     if not controller.valid_observation(observation, now=now):
         raise ValueError("Untrusted or stale stop observation")

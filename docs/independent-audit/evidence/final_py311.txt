@@ -1,0 +1,163 @@
+test_a09_close_by_order_id_survives_concurrent_index_shift (test_audit_adversarial.AttributionTests.test_a09_close_by_order_id_survives_concurrent_index_shift)
+FIXED F-08: index-based close could close the wrong position. ... ok
+test_a10_positions_and_exits_carry_strategy_attribution (test_audit_adversarial.AttributionTests.test_a10_positions_and_exits_carry_strategy_attribution) ... ok
+test_a06_arbitrary_caller_clock_rejected (test_audit_adversarial.ClockTests.test_a06_arbitrary_caller_clock_rejected)
+FIXED F-06: restores guard added in 6607789 and reverted in d6072a6. ... ok
+test_a06b_controller_rejects_forged_now (test_audit_adversarial.ClockTests.test_a06b_controller_rejects_forged_now)
+FIXED F-06: freshness is measured against the trusted clock. ... ok
+test_a14_restart_after_utc_midnight_rolls_once (test_audit_adversarial.ClockTests.test_a14_restart_after_utc_midnight_rolls_once) ... ok
+test_a13_kill_switch_blocks_entries_while_database_locked (test_audit_adversarial.KillSwitchTests.test_a13_kill_switch_blocks_entries_while_database_locked)
+FIXED F-10: halt() used to fail after 10 s if another writer held the lock. ... ok
+test_a07_tampered_cash_detected_at_restart (test_audit_adversarial.LedgerIntegrityTests.test_a07_tampered_cash_detected_at_restart)
+FIXED F-07: snapshot/event replay verification. ... ok
+test_a07b_tampered_daily_baseline_detected (test_audit_adversarial.LedgerIntegrityTests.test_a07b_tampered_daily_baseline_detected) ... ok
+test_a07c_deleted_event_detected (test_audit_adversarial.LedgerIntegrityTests.test_a07c_deleted_event_detected) ... ok
+test_a07d_edited_event_detected (test_audit_adversarial.LedgerIntegrityTests.test_a07d_edited_event_detected) ... ok
+test_a07e_valid_ledger_verifies_and_exposes_anchor (test_audit_adversarial.LedgerIntegrityTests.test_a07e_valid_ledger_verifies_and_exposes_anchor) ... ok
+test_a11_events_are_timestamped (test_audit_adversarial.LedgerIntegrityTests.test_a11_events_are_timestamped) ... ok
+test_a12_handler_cannot_spoof_another_producer (test_audit_adversarial.OrchestratorSpoofTests.test_a12_handler_cannot_spoof_another_producer)
+FIXED F-12: router now binds proposed producer to responding role. ... ok
+test_reserve_refuses_cash_over_commitment (test_audit_adversarial.ReservationTests.test_reserve_refuses_cash_over_commitment)
+Added after mutation testing: removing the reserve-time cash check ... ok
+test_a04_any_mark_through_stop_closes_position (test_audit_adversarial.StopIntegrityTests.test_a04_any_mark_through_stop_closes_position)
+FIXED F-03: observe()/mark() used to skip stop evaluation. ... ok
+test_a05_gap_can_exceed_daily_threshold_but_new_risk_is_refused (test_audit_adversarial.StopIntegrityTests.test_a05_gap_can_exceed_daily_threshold_but_new_risk_is_refused)
+Characterization F-05: refusing new risk is not a loss guarantee. ... ok
+test_a01_unapproved_strategy_cannot_fill_through_pending_orders (test_audit_adversarial.TrustBoundaryTests.test_a01_unapproved_strategy_cannot_fill_through_pending_orders)
+OPEN F-01: PendingOrders trusts caller-supplied authorization booleans. ... expected failure
+test_a02_implausible_price_is_rejected (test_audit_adversarial.TrustBoundaryTests.test_a02_implausible_price_is_rejected)
+OPEN F-02: no price-plausibility check or authenticated feed. ... expected failure
+test_a03_fabricated_mark_cannot_realize_profit (test_audit_adversarial.TrustBoundaryTests.test_a03_fabricated_mark_cannot_realize_profit)
+OPEN F-02: a forged mark followed by close books fictitious P&L. ... expected failure
+test_a08_reservation_fillable_after_small_price_move (test_audit_adversarial.TrustBoundaryTests.test_a08_reservation_fillable_after_small_price_move)
+OPEN F-09: fills require mark == reserved price exactly (liveness). ... expected failure
+test_parallel_processes_cannot_exceed_combined_risk (test_audit_resilience.CrashAndProcessConcurrencyTests.test_parallel_processes_cannot_exceed_combined_risk) ... ok
+test_parallel_processes_cannot_reuse_order_id (test_audit_resilience.CrashAndProcessConcurrencyTests.test_parallel_processes_cannot_reuse_order_id) ... ok
+test_sigkill_during_trading_never_corrupts_ledger (test_audit_resilience.CrashAndProcessConcurrencyTests.test_sigkill_during_trading_never_corrupts_ledger) ... Traceback (most recent call last):
+  File "<string>", line 6, in <module>
+  File "/home/claude/autonomous-trading-desk/src/trading_desk/persistent_paper.py", line 56, in __init__
+    self.reconcile()
+  File "/home/claude/autonomous-trading-desk/src/trading_desk/persistent_paper.py", line 198, in reconcile
+    self._verify(db, desk)
+  File "/home/claude/autonomous-trading-desk/src/trading_desk/persistent_paper.py", line 269, in _verify
+    raise ValueError("Reservation status disagrees with event log")
+ValueError: Reservation status disagrees with event log
+Traceback (most recent call last):
+  File "<string>", line 6, in <module>
+  File "/home/claude/autonomous-trading-desk/src/trading_desk/persistent_paper.py", line 56, in __init__
+    self.reconcile()
+  File "/home/claude/autonomous-trading-desk/src/trading_desk/persistent_paper.py", line 198, in reconcile
+    self._verify(db, desk)
+  File "/home/claude/autonomous-trading-desk/src/trading_desk/persistent_paper.py", line 281, in _verify
+    raise ValueError("Stored snapshot does not match event-log replay")
+ValueError: Stored snapshot does not match event-log replay
+ok
+test_database_unavailable_never_approves_and_halt_still_blocks (test_audit_resilience.FaultInjectionTests.test_database_unavailable_never_approves_and_halt_still_blocks) ... ok
+test_failure_inside_close_rolls_back_everything (test_audit_resilience.FaultInjectionTests.test_failure_inside_close_rolls_back_everything) ... ok
+test_failure_inside_fill_rolls_back_everything (test_audit_resilience.FaultInjectionTests.test_failure_inside_fill_rolls_back_everything) ... ok
+test_ledger_throughput_and_startup_verification_budget (test_audit_resilience.PerformanceTests.test_ledger_throughput_and_startup_verification_budget) ... ok
+test_deterministic_replay_produces_identical_ledger (test_audit_resilience.RandomizedInvariantTests.test_deterministic_replay_produces_identical_ledger) ... ok
+test_random_sequences_preserve_accounting_invariants (test_audit_resilience.RandomizedInvariantTests.test_random_sequences_preserve_accounting_invariants) ... ok
+test_approved_baseline (test_gateway_strategies.GatewayTests.test_approved_baseline) ... ok
+test_combined_open_risk (test_gateway_strategies.GatewayTests.test_combined_open_risk) ... ok
+test_daily_combined_loss (test_gateway_strategies.GatewayTests.test_daily_combined_loss) ... ok
+test_daily_loss (test_gateway_strategies.GatewayTests.test_daily_loss) ... ok
+test_daily_unrealized_loss (test_gateway_strategies.GatewayTests.test_daily_unrealized_loss) ... ok
+test_kill_switch (test_gateway_strategies.GatewayTests.test_kill_switch) ... ok
+test_no_short (test_gateway_strategies.GatewayTests.test_no_short) ... ok
+test_reject_nonfinite (test_gateway_strategies.GatewayTests.test_reject_nonfinite) ... ok
+test_stale_data (test_gateway_strategies.GatewayTests.test_stale_data) ... ok
+test_unauthorized_strategy (test_gateway_strategies.GatewayTests.test_unauthorized_strategy) ... ok
+test_generated_hypotheses (test_gateway_strategies.StrategyTests.test_generated_hypotheses) ... ok
+test_invalid_strategy (test_gateway_strategies.StrategyTests.test_invalid_strategy) ... ok
+test_append_and_fingerprint (test_metrics_validation_audit.AuditTests.test_append_and_fingerprint) ... ok
+test_drawdown (test_metrics_validation_audit.PerformanceTests.test_drawdown) ... ok
+test_flat_curve (test_metrics_validation_audit.PerformanceTests.test_flat_curve) ... ok
+test_invalid_curve (test_metrics_validation_audit.PerformanceTests.test_invalid_curve) ... ok
+test_not_enough_data (test_metrics_validation_audit.ValidationTests.test_not_enough_data) ... ok
+test_rolling_gap (test_metrics_validation_audit.ValidationTests.test_rolling_gap) ... ok
+test_event_budget (test_orchestrator.OrchestratorTests.test_event_budget) ... ok
+test_rejects_crm_trade_authority (test_orchestrator.OrchestratorTests.test_rejects_crm_trade_authority) ... ok
+test_rejects_duplicate_subscription (test_orchestrator.OrchestratorTests.test_rejects_duplicate_subscription) ... ok
+test_rejects_invalid_authorization_producer (test_orchestrator.OrchestratorTests.test_rejects_invalid_authorization_producer) ... ok
+test_routes_event_to_subscribed_role (test_orchestrator.OrchestratorTests.test_routes_event_to_subscribed_role) ... ok
+test_midnight_does_not_reset_position (test_overnight_policy.OvernightPolicyTests.test_midnight_does_not_reset_position) ... ok
+test_momentum_no_forced_midnight_exit (test_overnight_policy.OvernightPolicyTests.test_momentum_no_forced_midnight_exit) ... ok
+test_sma_no_forced_midnight_exit (test_overnight_policy.OvernightPolicyTests.test_sma_no_forced_midnight_exit) ... ok
+test_approved_and_fresh_reservation (test_paper_controller.PaperControllerTests.test_approved_and_fresh_reservation) ... ok
+test_direct_persistent_entry_disabled (test_paper_controller.PaperControllerTests.test_direct_persistent_entry_disabled) ... ok
+test_fill_requires_current_mark_and_matching_strategy (test_paper_controller.PaperControllerTests.test_fill_requires_current_mark_and_matching_strategy) ... ok
+test_stale_and_future_prices_rejected (test_paper_controller.PaperControllerTests.test_stale_and_future_prices_rejected) ... ok
+test_unapproved_strategy_fails_closed (test_paper_controller.PaperControllerTests.test_unapproved_strategy_fails_closed) ... ok
+test_approved_entry_debits_cash_and_records_risk (test_paper_desk.PaperDeskTests.test_approved_entry_debits_cash_and_records_risk) ... ok
+test_cash_limit_blocks_overspending (test_paper_desk.PaperDeskTests.test_cash_limit_blocks_overspending) ... ok
+test_close_realizes_pnl_and_frees_cash (test_paper_desk.PaperDeskTests.test_close_realizes_pnl_and_frees_cash) ... ok
+test_combined_risk_limit_is_enforced (test_paper_desk.PaperDeskTests.test_combined_risk_limit_is_enforced) ... ok
+test_daily_loss_cap_rejects (test_paper_desk.PaperDeskTests.test_daily_loss_cap_rejects) ... ok
+test_invalid_stop_or_nonfinite_rejected (test_paper_desk.PaperDeskTests.test_invalid_stop_or_nonfinite_rejected) ... ok
+test_kill_switch_blocks_entries (test_paper_desk.PaperDeskTests.test_kill_switch_blocks_entries) ... ok
+test_mark_to_market_daily_loss (test_paper_desk.PaperDeskTests.test_mark_to_market_daily_loss) ... ok
+test_midnight_reset_keeps_position (test_paper_desk.PaperDeskTests.test_midnight_reset_keeps_position) ... ok
+test_missing_or_mismatched_mark_rejected (test_paper_desk.PaperDeskTests.test_missing_or_mismatched_mark_rejected) ... ok
+test_no_short_or_unknown_symbol (test_paper_desk.PaperDeskTests.test_no_short_or_unknown_symbol) ... ok
+test_unauthorized_or_stale_rejected (test_paper_desk.PaperDeskTests.test_unauthorized_or_stale_rejected) ... ok
+test_no_exit_above_stop (test_paper_stops.PaperStopTests.test_no_exit_above_stop) ... ok
+test_stale_observation_cannot_trigger_exit (test_paper_stops.PaperStopTests.test_stale_observation_cannot_trigger_exit) ... ok
+test_stop_executes_at_gapped_price_not_stop_price (test_paper_stops.PaperStopTests.test_stop_executes_at_gapped_price_not_stop_price) ... ok
+test_stop_mark_and_close_record_one_event (test_paper_stops.PaperStopTests.test_stop_mark_and_close_record_one_event) ... ok
+test_cancel_releases_reserved_risk (test_pending_orders.PendingOrderTests.test_cancel_releases_reserved_risk) ... ok
+test_duplicate_order_id_never_reused (test_pending_orders.PendingOrderTests.test_duplicate_order_id_never_reused) ... ok
+test_fill_is_atomic_and_idempotent (test_pending_orders.PendingOrderTests.test_fill_is_atomic_and_idempotent) ... ok
+test_fill_without_reauthorization_is_rejected (test_pending_orders.PendingOrderTests.test_fill_without_reauthorization_is_rejected) ... ok
+test_kill_switch_blocks_pending_fill (test_pending_orders.PendingOrderTests.test_kill_switch_blocks_pending_fill) ... ok
+test_pending_risk_reservation_blocks_second_order (test_pending_orders.PendingOrderTests.test_pending_risk_reservation_blocks_second_order) ... ok
+test_reservations_survive_restart (test_pending_orders.PendingOrderTests.test_reservations_survive_restart) ... ok
+test_close_persists_realized_pnl (test_persistent_paper.PersistentPaperTests.test_close_persists_realized_pnl) ... ok
+test_corrupt_reservation_fails_restart_reconciliation (test_persistent_paper.PersistentPaperTests.test_corrupt_reservation_fails_restart_reconciliation) ... ok
+test_corrupt_state_fails_closed (test_persistent_paper.PersistentPaperTests.test_corrupt_state_fails_closed) ... ok
+test_daily_reset_preserves_positions (test_persistent_paper.PersistentPaperTests.test_daily_reset_preserves_positions) ... ok
+test_event_log_tracks_changes (test_persistent_paper.PersistentPaperTests.test_event_log_tracks_changes) ... ok
+test_kill_switch_persists_across_restart (test_persistent_paper.PersistentPaperTests.test_kill_switch_persists_across_restart) ... ok
+test_reconcile_valid_ledger_after_restart (test_persistent_paper.PersistentPaperTests.test_reconcile_valid_ledger_after_restart) ... ok
+test_reconciliation_rejects_tampered_position_risk (test_persistent_paper.PersistentPaperTests.test_reconciliation_rejects_tampered_position_risk) ... ok
+test_rejected_order_does_not_mutate_balances (test_persistent_paper.PersistentPaperTests.test_rejected_order_does_not_mutate_balances) ... ok
+test_restart_recovers_cash_positions_and_marks (test_persistent_paper.PersistentPaperTests.test_restart_recovers_cash_positions_and_marks) ... ok
+test_utc_roll_survives_restart_and_rejects_rollback (test_persistent_paper.PersistentPaperTests.test_utc_roll_survives_restart_and_rejects_rollback) ... ok
+test_kill_switch_survives_restart_and_blocks_fill (test_phase2_adversarial.AdversarialTests.test_kill_switch_survives_restart_and_blocks_fill) ... ok
+test_parallel_reservations_never_exceed_risk (test_phase2_adversarial.AdversarialTests.test_parallel_reservations_never_exceed_risk) ... ok
+test_reject_forged_authorization_types (test_phase2_adversarial.AdversarialTests.test_reject_forged_authorization_types) ... ok
+test_tampered_pending_cash_fails_closed_on_restart (test_phase2_adversarial.AdversarialTests.test_tampered_pending_cash_fails_closed_on_restart) ... ok
+test_audit_and_report_written (test_pipeline.PipelineTests.test_audit_and_report_written) ... ok
+test_produces_rolling_report (test_pipeline.PipelineTests.test_produces_rolling_report) ... ok
+test_rejects_insufficient_training_data (test_pipeline.PipelineTests.test_rejects_insufficient_training_data) ... ok
+test_csv_requires_timezone (test_research.ResearchTests.test_csv_requires_timezone) ... ok
+test_end_flat (test_research.ResearchTests.test_end_flat) ... ok
+test_fees_reduce_returns (test_research.ResearchTests.test_fees_reduce_returns) ... ok
+test_grid_sorted (test_research.ResearchTests.test_grid_sorted) ... ok
+test_holdout_split (test_research.ResearchTests.test_holdout_split) ... ok
+test_no_future_signal (test_research.ResearchTests.test_no_future_signal) ... ok
+test_reject_nonfinite_and_excessive_costs (test_research.ResearchTests.test_reject_nonfinite_and_excessive_costs) ... ok
+test_reject_noninteger_windows (test_research.ResearchTests.test_reject_noninteger_windows) ... ok
+test_reject_unsorted (test_research.ResearchTests.test_reject_unsorted) ... ok
+test_accepts_five_dollars_at_500_equity (test_risk.RiskTests.test_accepts_five_dollars_at_500_equity) ... ok
+test_rejects_daily_loss_limit (test_risk.RiskTests.test_rejects_daily_loss_limit) ... ok
+test_rejects_more_than_one_percent (test_risk.RiskTests.test_rejects_more_than_one_percent) ... ok
+test_rejects_nonpositive_equity (test_risk.RiskTests.test_rejects_nonpositive_equity) ... ok
+test_all_families (test_signals_simulator.SignalTests.test_all_families) ... ok
+test_future_price_does_not_change_signal (test_signals_simulator.SignalTests.test_future_price_does_not_change_signal) ... ok
+test_invalid_family (test_signals_simulator.SignalTests.test_invalid_family) ... ok
+test_costs_reduce_equity (test_signals_simulator.SimulatorTests.test_costs_reduce_equity) ... ok
+test_reject_invalid_cost (test_signals_simulator.SimulatorTests.test_reject_invalid_cost) ... ok
+test_screen_multiple_families (test_signals_simulator.SimulatorTests.test_screen_multiple_families) ... ok
+test_backtest (test_tools.RegistryTests.test_backtest) ... ok
+test_candidates (test_tools.RegistryTests.test_candidates) ... ok
+test_reject_bad_bars (test_tools.RegistryTests.test_reject_bad_bars) ... ok
+test_reject_crm (test_tools.RegistryTests.test_reject_crm) ... ok
+test_reject_excessive_grid (test_tools.RegistryTests.test_reject_excessive_grid) ... ok
+test_reject_unknown (test_tools.RegistryTests.test_reject_unknown) ... ok
+test_role_catalog (test_tools.RegistryTests.test_role_catalog) ... ok
+
+----------------------------------------------------------------------
+Ran 127 tests in 8.955s
+
+OK (expected failures=4)

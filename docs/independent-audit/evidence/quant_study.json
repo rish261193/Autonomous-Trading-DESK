@@ -1,0 +1,402 @@
+{
+ "BTC": {
+  "bars": 3065,
+  "start": "2018-01-01",
+  "end": "2026-05-23",
+  "walk_forward_15bps": {
+   "selected": {
+    "fast": 7,
+    "slow": 40,
+    "net_return_pct": 1026.927832713363,
+    "trades": 62
+   },
+   "holdout_net_return_pct": 93.45,
+   "holdout_max_dd_pct": 36.14,
+   "holdout_trades": 32,
+   "buy_and_hold_holdout_pct": 111.25,
+   "holdout_period": [
+    "2023-11-16",
+    "2026-05-23"
+   ]
+  },
+  "walk_forward_60bps": {
+   "selected": {
+    "fast": 8,
+    "slow": 40,
+    "net_return_pct": 787.5337561569298,
+    "trades": 52
+   },
+   "holdout_net_return_pct": 70.41,
+   "holdout_max_dd_pct": 38.22,
+   "holdout_trades": 28,
+   "buy_and_hold_holdout_pct": 109.36,
+   "holdout_period": [
+    "2023-11-16",
+    "2026-05-23"
+   ]
+  },
+  "walk_forward_100bps": {
+   "selected": {
+    "fast": 8,
+    "slow": 40,
+    "net_return_pct": 620.8513654225362,
+    "trades": 52
+   },
+   "holdout_net_return_pct": 52.35,
+   "holdout_max_dd_pct": 41.11,
+   "holdout_trades": 28,
+   "buy_and_hold_holdout_pct": 107.69,
+   "holdout_period": [
+    "2023-11-16",
+    "2026-05-23"
+   ]
+  },
+  "rolling_pipeline_15bps": {
+   "windows": [
+    {
+     "window": 1,
+     "sel": {
+      "fast": 5,
+      "slow": 40
+     },
+     "strategy_pct": 36.31,
+     "buy_hold_pct": 31.81,
+     "trades": 6
+    },
+    {
+     "window": 2,
+     "sel": {
+      "fast": 5,
+      "slow": 40
+     },
+     "strategy_pct": 159.01,
+     "buy_hold_pct": 188.7,
+     "trades": 4
+    },
+    {
+     "window": 3,
+     "sel": {
+      "fast": 10,
+      "slow": 20
+     },
+     "strategy_pct": 0.75,
+     "buy_hold_pct": 30.74,
+     "trades": 12
+    },
+    {
+     "window": 4,
+     "sel": {
+      "fast": 3,
+      "slow": 38
+     },
+     "strategy_pct": 26.71,
+     "buy_hold_pct": 54.45,
+     "trades": 6
+    },
+    {
+     "window": 5,
+     "sel": {
+      "fast": 9,
+      "slow": 33
+     },
+     "strategy_pct": -35.69,
+     "buy_hold_pct": -58.04,
+     "trades": 8
+    },
+    {
+     "window": 6,
+     "sel": {
+      "fast": 8,
+      "slow": 36
+     },
+     "strategy_pct": -28.77,
+     "buy_hold_pct": -19.52,
+     "trades": 6
+    },
+    {
+     "window": 7,
+     "sel": {
+      "fast": 8,
+      "slow": 36
+     },
+     "strategy_pct": 25.09,
+     "buy_hold_pct": 49.17,
+     "trades": 8
+    },
+    {
+     "window": 8,
+     "sel": {
+      "fast": 2,
+      "slow": 36
+     },
+     "strategy_pct": 46.91,
+     "buy_hold_pct": 60.75,
+     "trades": 8
+    },
+    {
+     "window": 9,
+     "sel": {
+      "fast": 8,
+      "slow": 36
+     },
+     "strategy_pct": 46.36,
+     "buy_hold_pct": 66.64,
+     "trades": 6
+    },
+    {
+     "window": 10,
+     "sel": {
+      "fast": 8,
+      "slow": 30
+     },
+     "strategy_pct": -0.8,
+     "buy_hold_pct": 38.79,
+     "trades": 10
+    },
+    {
+     "window": 11,
+     "sel": {
+      "fast": 2,
+      "slow": 18
+     },
+     "strategy_pct": 3.09,
+     "buy_hold_pct": 5.22,
+     "trades": 14
+    },
+    {
+     "window": 12,
+     "sel": {
+      "fast": 10,
+      "slow": 18
+     },
+     "strategy_pct": -24.67,
+     "buy_hold_pct": -13.79,
+     "trades": 12
+    }
+   ],
+   "beat_buy_hold": "2/12",
+   "positive": "8/12",
+   "mean_excess_vs_bh_pct": -15.05,
+   "stdev_excess_pct": 17.35,
+   "t_stat_excess": -3.01
+  },
+  "family_screen_120_configs": {
+   "best_in_sample": {
+    "family": "momentum",
+    "lookback": 20,
+    "threshold_bps": 200,
+    "net_return_pct": 677.4,
+    "trades": 238
+   },
+   "same_config_holdout_net_pct": 113.8,
+   "holdout_buy_hold_pct": 111.3,
+   "median_in_sample_config_pct": 17.2,
+   "share_of_configs_beating_in_sample_buy_hold": "10/120"
+  },
+  "random_signal_null_in_sample": {
+   "n": 120,
+   "best_pct": 890.2,
+   "median_pct": -3.4
+  }
+ },
+ "ETH": {
+  "bars": 3065,
+  "start": "2018-01-01",
+  "end": "2026-05-23",
+  "walk_forward_15bps": {
+   "selected": {
+    "fast": 10,
+    "slow": 20,
+    "net_return_pct": 3155.52505536683,
+    "trades": 116
+   },
+   "holdout_net_return_pct": -15.54,
+   "holdout_max_dd_pct": 53.8,
+   "holdout_trades": 56,
+   "buy_and_hold_holdout_pct": 7.66,
+   "holdout_period": [
+    "2023-11-16",
+    "2026-05-23"
+   ]
+  },
+  "walk_forward_60bps": {
+   "selected": {
+    "fast": 10,
+    "slow": 20,
+    "net_return_pct": 1831.5935741314363,
+    "trades": 116
+   },
+   "holdout_net_return_pct": -34.36,
+   "holdout_max_dd_pct": 59.59,
+   "holdout_trades": 56,
+   "buy_and_hold_holdout_pct": 6.7,
+   "holdout_period": [
+    "2023-11-16",
+    "2026-05-23"
+   ]
+  },
+  "walk_forward_100bps": {
+   "selected": {
+    "fast": 10,
+    "slow": 34,
+    "net_return_pct": 1177.1491670267426,
+    "trades": 60
+   },
+   "holdout_net_return_pct": 70.99,
+   "holdout_max_dd_pct": 47.19,
+   "holdout_trades": 30,
+   "buy_and_hold_holdout_pct": 5.85,
+   "holdout_period": [
+    "2023-11-16",
+    "2026-05-23"
+   ]
+  },
+  "rolling_pipeline_15bps": {
+   "windows": [
+    {
+     "window": 1,
+     "sel": {
+      "fast": 7,
+      "slow": 25
+     },
+     "strategy_pct": 131.8,
+     "buy_hold_pct": 79.39,
+     "trades": 6
+    },
+    {
+     "window": 2,
+     "sel": {
+      "fast": 4,
+      "slow": 13
+     },
+     "strategy_pct": 32.67,
+     "buy_hold_pct": 180.83,
+     "trades": 16
+    },
+    {
+     "window": 3,
+     "sel": {
+      "fast": 10,
+      "slow": 19
+     },
+     "strategy_pct": 108.3,
+     "buy_hold_pct": 187.69,
+     "trades": 8
+    },
+    {
+     "window": 4,
+     "sel": {
+      "fast": 2,
+      "slow": 21
+     },
+     "strategy_pct": 24.37,
+     "buy_hold_pct": 120.97,
+     "trades": 14
+    },
+    {
+     "window": 5,
+     "sel": {
+      "fast": 10,
+      "slow": 34
+     },
+     "strategy_pct": -9.77,
+     "buy_hold_pct": -71.87,
+     "trades": 4
+    },
+    {
+     "window": 6,
+     "sel": {
+      "fast": 9,
+      "slow": 33
+     },
+     "strategy_pct": -11.63,
+     "buy_hold_pct": 3.45,
+     "trades": 8
+    },
+    {
+     "window": 7,
+     "sel": {
+      "fast": 5,
+      "slow": 15
+     },
+     "strategy_pct": 32.02,
+     "buy_hold_pct": 38.59,
+     "trades": 18
+    },
+    {
+     "window": 8,
+     "sel": {
+      "fast": 8,
+      "slow": 31
+     },
+     "strategy_pct": 13.64,
+     "buy_hold_pct": 33.14,
+     "trades": 6
+    },
+    {
+     "window": 9,
+     "sel": {
+      "fast": 2,
+      "slow": 33
+     },
+     "strategy_pct": 50.44,
+     "buy_hold_pct": 66.68,
+     "trades": 14
+    },
+    {
+     "window": 10,
+     "sel": {
+      "fast": 2,
+      "slow": 32
+     },
+     "strategy_pct": -11.45,
+     "buy_hold_pct": 2.1,
+     "trades": 14
+    },
+    {
+     "window": 11,
+     "sel": {
+      "fast": 2,
+      "slow": 31
+     },
+     "strategy_pct": 17.48,
+     "buy_hold_pct": -35.53,
+     "trades": 8
+    },
+    {
+     "window": 12,
+     "sel": {
+      "fast": 8,
+      "slow": 37
+     },
+     "strategy_pct": 30.24,
+     "buy_hold_pct": 14.7,
+     "trades": 8
+    }
+   ],
+   "beat_buy_hold": "4/12",
+   "positive": "9/12",
+   "mean_excess_vs_bh_pct": -17.67,
+   "stdev_excess_pct": 63.67,
+   "t_stat_excess": -0.96
+  },
+  "family_screen_120_configs": {
+   "best_in_sample": {
+    "family": "momentum",
+    "lookback": 20,
+    "threshold_bps": 0,
+    "net_return_pct": 2186.5,
+    "trades": 214
+   },
+   "same_config_holdout_net_pct": -6.7,
+   "holdout_buy_hold_pct": 7.7,
+   "median_in_sample_config_pct": 43.4,
+   "share_of_configs_beating_in_sample_buy_hold": "25/120"
+  },
+  "random_signal_null_in_sample": {
+   "n": 120,
+   "best_pct": 1518.2,
+   "median_pct": 0.3
+  }
+ }
+}
