@@ -10,8 +10,8 @@ The `simulator.py` module screens all three with configurable estimated transact
 
 ## Critical limitations
 
-The simulator fills at bar close based on prior closes; real execution will differ. It approximates daily liquidation at the first available next-day bar, which can violate the no-overnight requirement. There are no protective stops, independent risk-gateway enforcement, actual exchange constraints, liquidity modelling, market-data provenance, or real-data performance evidence. The `total_estimated_cost_usd` field represents modeled percentage charges on trade notional, not a complete trading cost accounting. Never connect this simulator directly to a broker.
+The simulator fills at bar close based on prior closes; real execution will differ. Positions can cross UTC midnight; only the last bar closes remaining simulated exposure for end-of-dataset accounting. There are no protective stops, independent risk-gateway enforcement, actual exchange constraints, liquidity modelling, market-data provenance, or real-data performance evidence. The `total_estimated_cost_usd` field represents modeled percentage charges on trade notional, not a complete trading cost accounting. Never connect this simulator directly to a broker.
 
 ## Next
 
-Integrate the three families into rolling train-only selection and unseen-period evaluation. Add an execution-aware paper simulator and enforce session cutoff before considering live paper orders.
+Integrate the three families into rolling train-only selection and unseen-period evaluation. Add an execution-aware paper simulator and implement continuous 24/7 exposure monitoring and UTC-day loss accounting before considering broker-connected paper orders.
