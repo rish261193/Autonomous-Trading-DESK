@@ -77,7 +77,7 @@ def fetch_public_hourly(symbol: str, *, exchange: Any = None, now_ms: int | None
         exchange = ccxt.kraken({"enableRateLimit": True})
     if getattr(exchange, "id", None) != "kraken":
         raise ValueError("only Kraken is approved")
-    if not exchange.has.get("fetchOHLCV"):
+    if not isinstance(getattr(exchange, "has", None), dict) or not exchange.has.get("fetchOHLCV"):
         raise ValueError("exchange does not support OHLCV")
     if now_ms is None:
         from time import time
