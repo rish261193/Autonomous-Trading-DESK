@@ -26,3 +26,7 @@ The strategy worker and paper service MUST run under separate OS identities or i
 ## Market-data circuit breaker (new, not yet deployed)
 
 `MarketDataCircuitBreaker` wraps a source and halts future source calls after three consecutive exceptions by default; an owner-only method resets it. When used as the `TrustedPaperIntentService` price source, failed observations reject new reservations and fills. This is an **in-memory source-level halt**, not the persistent ledger kill switch: process restarts clear its state, and it does not automatically call `PersistentPaperDesk.halt()`. Deployment must persist the halt, test watchdog behavior during idle periods, and ensure existing position management remains safe during feed loss. Do not expose reset through the strategy HTTP API.
+
+## Owner-side composition and persistent kill switch
+
+`build_guarded_paper_service` now connects two-source corroboration to the feed circuit breaker and the persistent desk's `halt()` callback. Repeated source errors trip the breaker and write the ledger `.HALT` flag before attempting the SQLite kill-switch update; restart reconciliation honors that flag. Unit tests exercise feed outage → denied intents → persistent halt → restart. This is not a deployed service, and a missing feed heartbeat when no requests occur is **not** detected. The owner must run an independent watchdog and isolate the database from agents. `reset_by_owner()` resets only the in-memory feed counter, never the persistent kill switch. CI must pass before these claims are treated as verified.
