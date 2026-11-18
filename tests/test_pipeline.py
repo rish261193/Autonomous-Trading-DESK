@@ -30,7 +30,7 @@ class PipelineTests(unittest.TestCase):
             save_pipeline_report(report, output)
             self.assertTrue(Path(audit).exists())
             self.assertTrue(Path(output).exists())
-            self.assertEqual(len(Path(audit).read_text().splitlines()), 4 if False else 1)
+            self.assertEqual(len(Path(audit).read_text().splitlines()), 1)
 
     def test_rejects_insufficient_training_data(self):
         with self.assertRaises(ValueError):
