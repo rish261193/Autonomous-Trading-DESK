@@ -16,3 +16,41 @@ jobs:
         run: python -m compileall -q src tests
       - name: Run unit tests
         run: python -m unittest discover -s tests -v
+
+  kraken-public-data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned CCXT and project
+        run: |
+          python -m pip install 'ccxt==4.5.93'
+          python -m pip install -e .
+          python -m pip check
+          python -c "import ccxt; assert ccxt.__version__ == '4.5.93'"
+      - name: Run adapter tests
+        run: python -m unittest discover -s tests -p 'test_ccxt_market_data.py' -v
+      - name: Verify live Kraken BTC and ETH public candles
+        env:
+          PYTHONPATH: src
+        run: |
+          python - <<'PY'
+          import ccxt
+          from trading_desk.ccxt_market_data import fetch_public_hourly, save_ohlcv
+          exchange = ccxt.kraken({'enableRateLimit': True, 'timeout': 20000})
+          try:
+              exchange.load_markets()
+              for symbol, label in [('BTC/USD', 'btc'), ('ETH/USD', 'eth')]:
+                  now_ms = exchange.milliseconds()
+                  rows, meta = fetch_public_hourly(symbol, exchange=exchange, now_ms=now_ms)
+                  assert len(rows) >= 2, f'{symbol}: insufficient completed candles'
+                  assert rows[-1][0] + 3600000 <= now_ms
+                  manifest = save_ohlcv(rows, meta, output_prefix=f'/tmp/kraken-{label}')
+                  assert len(manifest['data_sha256']) == 64
+                  print(symbol, len(rows), manifest['data_sha256'])
+          finally:
+              exchange.close()
+          PY
