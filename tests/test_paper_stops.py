@@ -29,6 +29,17 @@ class PaperStopTests(unittest.TestCase):
         self.assertEqual(self.desk.snapshot().cash_usd, 490)
         self.assertEqual(len(self.desk.snapshot().positions), 0)
 
+    def test_stop_mark_and_close_record_one_event(self):
+        import sqlite3
+        result = process_stop_observation(
+            self.controller, PriceObservation("BTC/USD", 90, self.now), now=self.now)
+        self.assertEqual(result.triggered, 1)
+        with sqlite3.connect(self.desk.path) as db:
+            events = [row[0] for row in db.execute(
+                "SELECT kind FROM events ORDER BY seq")]
+        self.assertEqual(events[-1], "stop_mark")
+        self.assertEqual(events.count("stop_mark"), 1)
+
     def test_no_exit_above_stop(self):
         result = process_stop_observation(
             self.controller, PriceObservation("BTC/USD", 97, self.now), now=self.now)
