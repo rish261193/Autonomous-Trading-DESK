@@ -11,6 +11,7 @@ import argparse
 import csv
 import json
 from datetime import datetime, timezone
+from hashlib import sha256
 from math import isfinite
 from pathlib import Path
 
@@ -50,6 +51,14 @@ def load_decisions(path: str, *, expected_symbol: str) -> dict[datetime, Researc
     return decisions
 
 
+def _file_sha256(path: str) -> str:
+    digest = sha256()
+    with open(path, "rb") as stream:
+        for chunk in iter(lambda: stream.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
 def run_experiment(*, prices_csv: str, signals_csv: str, symbol: str,
                    horizon_bars: int = 1, fee_bps: float = 10,
                    slippage_bps: float = 5) -> dict:
@@ -57,6 +66,11 @@ def run_experiment(*, prices_csv: str, signals_csv: str, symbol: str,
     decisions = load_decisions(signals_csv, expected_symbol=symbol)
     report = evaluate_history(bars, decisions, horizon_bars=horizon_bars,
                               costs=Costs(fee_bps, slippage_bps))
+    report["price_data_sha256"] = _file_sha256(prices_csv)
+    report["signal_data_sha256"] = _file_sha256(signals_csv)
+    report["evaluation_settings"] = {"horizon_bars": horizon_bars,
+                                     "fee_bps": fee_bps,
+                                     "slippage_bps": slippage_bps}
     report["symbol"] = symbol
     report["price_bars"] = len(bars)
     report["supplied_signals"] = len(decisions)
