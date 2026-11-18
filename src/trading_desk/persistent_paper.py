@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from datetime import datetime, timezone
 import sqlite3
 from contextlib import contextmanager
@@ -53,6 +54,9 @@ class PersistentPaperDesk:
             db.commit()
         # Fail closed on corrupt persisted state, rather than silently reinitializing.
         self.reconcile()
+        # A halt requested while the database was unavailable is applied now.
+        if self.halt_requested() and not self.snapshot().kill_switch:
+            self._mutate("halt", lambda d: d.halt(), {"source": "halt_flag"})
 
     @contextmanager
     def _connect(self):
@@ -374,7 +378,29 @@ class PersistentPaperDesk:
             db.commit()
             return count, realized
 
+    @property
+    def halt_flag_path(self) -> str:
+        return self.path + ".HALT"
+
+    def halt_requested(self) -> bool:
+        """True once halt() has been requested, even if the DB write failed."""
+        return os.path.exists(self.halt_flag_path)
+
     def halt(self):
+        """Engage the kill switch.
+
+        The out-of-band flag file is written and fsynced *before* the SQLite
+        write, so new entries are refused immediately even if the database is
+        locked or unavailable (audit F-10: halt() used to raise "database is
+        locked" after 10 s and leave trading enabled). There is deliberately
+        no resume API; resuming is an operator decision.
+        """
+        fd = os.open(self.halt_flag_path, os.O_WRONLY | os.O_CREAT, 0o600)
+        try:
+            os.write(fd, self.now().isoformat().encode())
+            os.fsync(fd)
+        finally:
+            os.close(fd)
         return self._mutate("halt", lambda d: d.halt(), {})
 
     def reset_daily_baseline(self):

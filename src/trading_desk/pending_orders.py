@@ -34,6 +34,8 @@ class PendingOrders:
             return False
         if stop_price >= price:
             return False
+        if self.desk.halt_requested():
+            return False
         self.desk.roll_utc_day()
         with self.desk._connect() as db:
             db.execute("BEGIN IMMEDIATE")
@@ -93,6 +95,8 @@ class PendingOrders:
              expected_strategy_id=None, expected_symbol=None):
         """Synthetic fill; require renewed authorization and freshness."""
         if strategy_authorized is not True or market_data_fresh is not True:
+            return False
+        if self.desk.halt_requested():
             return False
         self.desk.roll_utc_day()
         with self.desk._connect() as db:
