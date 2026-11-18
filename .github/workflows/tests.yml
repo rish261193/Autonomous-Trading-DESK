@@ -1,6 +1,7 @@
 name: Python unit tests
 on:
   push:
+    branches: [main]
   pull_request:
 permissions:
   contents: read
@@ -8,7 +9,7 @@ permissions:
 # A branch can receive several commits while an earlier matrix is still running.
 # Keep only the newest run for each ref/event; never cancel main's checks.
 concurrency:
-  group: unit-tests-${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  group: unit-tests-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   test:
