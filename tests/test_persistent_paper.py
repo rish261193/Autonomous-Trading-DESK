@@ -34,7 +34,7 @@ class PersistentPaperTests(unittest.TestCase):
         self.desk.halt()
         restarted = PersistentPaperDesk(self.path)
         self.assertTrue(restarted.snapshot().kill_switch)
-        self.assertFalse(restarted.enter(**self.order))
+        self.assertFalse(PendingOrders(restarted).reserve("blocked", **self.order))
 
     def test_rejected_order_does_not_mutate_balances(self):
         self.assertFalse(self.orders.reserve("entry", **(self.order | {"quantity": 2})))
