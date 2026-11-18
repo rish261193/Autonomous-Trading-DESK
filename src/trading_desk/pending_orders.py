@@ -85,8 +85,10 @@ class PendingOrders:
             db.commit()
             return bool(changed)
 
-    def fill(self, order_id):
-        """Synthetic fill; rechecks reservations, mark, cash, risk and kill switch."""
+    def fill(self, order_id, *, strategy_authorized=False, market_data_fresh=False):
+        """Synthetic fill; require renewed authorization and freshness."""
+        if strategy_authorized is not True or market_data_fresh is not True:
+            return False
         with self.desk._connect() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute(
@@ -110,8 +112,8 @@ class PendingOrders:
             state = GatewayState(equity, desk.day_start_equity_usd,
                                  equity - desk.day_start_equity_usd,
                                  open_risk + max(0, others), desk.kill_switch,
-                                 payload["strategy_authorized"],
-                                 payload["market_data_fresh"])
+                                 strategy_authorized,
+                                 market_data_fresh)
             intent = OrderIntent(payload["strategy_id"], payload["symbol"], "buy",
                                  payload["notional"], payload["risk"])
             if not authorize(intent, state).allowed:
@@ -119,7 +121,10 @@ class PendingOrders:
                 return False
             keys = ("strategy_id", "symbol", "price", "stop_price", "quantity",
                     "strategy_authorized", "market_data_fresh")
-            if not desk.enter(**{k: payload[k] for k in keys}):
+            entry = {k: payload[k] for k in keys}
+            entry["strategy_authorized"] = strategy_authorized
+            entry["market_data_fresh"] = market_data_fresh
+            if not desk.enter(**entry):
                 db.commit()
                 return False
             self.desk._save(db, desk)
