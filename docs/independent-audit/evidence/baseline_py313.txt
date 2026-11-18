@@ -1,0 +1,118 @@
+test_approved_baseline (test_gateway_strategies.GatewayTests.test_approved_baseline) ... ok
+test_combined_open_risk (test_gateway_strategies.GatewayTests.test_combined_open_risk) ... ok
+test_daily_combined_loss (test_gateway_strategies.GatewayTests.test_daily_combined_loss) ... ok
+test_daily_loss (test_gateway_strategies.GatewayTests.test_daily_loss) ... ok
+test_daily_unrealized_loss (test_gateway_strategies.GatewayTests.test_daily_unrealized_loss) ... ok
+test_kill_switch (test_gateway_strategies.GatewayTests.test_kill_switch) ... ok
+test_no_short (test_gateway_strategies.GatewayTests.test_no_short) ... ok
+test_reject_nonfinite (test_gateway_strategies.GatewayTests.test_reject_nonfinite) ... ok
+test_stale_data (test_gateway_strategies.GatewayTests.test_stale_data) ... ok
+test_unauthorized_strategy (test_gateway_strategies.GatewayTests.test_unauthorized_strategy) ... ok
+test_generated_hypotheses (test_gateway_strategies.StrategyTests.test_generated_hypotheses) ... ok
+test_invalid_strategy (test_gateway_strategies.StrategyTests.test_invalid_strategy) ... ok
+test_append_and_fingerprint (test_metrics_validation_audit.AuditTests.test_append_and_fingerprint) ... ok
+test_drawdown (test_metrics_validation_audit.PerformanceTests.test_drawdown) ... ok
+test_flat_curve (test_metrics_validation_audit.PerformanceTests.test_flat_curve) ... ok
+test_invalid_curve (test_metrics_validation_audit.PerformanceTests.test_invalid_curve) ... ok
+test_not_enough_data (test_metrics_validation_audit.ValidationTests.test_not_enough_data) ... ok
+test_rolling_gap (test_metrics_validation_audit.ValidationTests.test_rolling_gap) ... ok
+test_event_budget (test_orchestrator.OrchestratorTests.test_event_budget) ... ok
+test_rejects_crm_trade_authority (test_orchestrator.OrchestratorTests.test_rejects_crm_trade_authority) ... ok
+test_rejects_duplicate_subscription (test_orchestrator.OrchestratorTests.test_rejects_duplicate_subscription) ... ok
+test_rejects_invalid_authorization_producer (test_orchestrator.OrchestratorTests.test_rejects_invalid_authorization_producer) ... ok
+test_routes_event_to_subscribed_role (test_orchestrator.OrchestratorTests.test_routes_event_to_subscribed_role) ... ok
+test_midnight_does_not_reset_position (test_overnight_policy.OvernightPolicyTests.test_midnight_does_not_reset_position) ... ok
+test_momentum_no_forced_midnight_exit (test_overnight_policy.OvernightPolicyTests.test_momentum_no_forced_midnight_exit) ... ok
+test_sma_no_forced_midnight_exit (test_overnight_policy.OvernightPolicyTests.test_sma_no_forced_midnight_exit) ... ok
+test_approved_and_fresh_reservation (test_paper_controller.PaperControllerTests.test_approved_and_fresh_reservation) ... ok
+test_direct_persistent_entry_disabled (test_paper_controller.PaperControllerTests.test_direct_persistent_entry_disabled) ... ok
+test_fill_requires_current_mark_and_matching_strategy (test_paper_controller.PaperControllerTests.test_fill_requires_current_mark_and_matching_strategy) ... ok
+test_stale_and_future_prices_rejected (test_paper_controller.PaperControllerTests.test_stale_and_future_prices_rejected) ... ok
+test_unapproved_strategy_fails_closed (test_paper_controller.PaperControllerTests.test_unapproved_strategy_fails_closed) ... ok
+test_approved_entry_debits_cash_and_records_risk (test_paper_desk.PaperDeskTests.test_approved_entry_debits_cash_and_records_risk) ... ok
+test_cash_limit_blocks_overspending (test_paper_desk.PaperDeskTests.test_cash_limit_blocks_overspending) ... ok
+test_close_realizes_pnl_and_frees_cash (test_paper_desk.PaperDeskTests.test_close_realizes_pnl_and_frees_cash) ... ok
+test_combined_risk_limit_is_enforced (test_paper_desk.PaperDeskTests.test_combined_risk_limit_is_enforced) ... ok
+test_daily_loss_cap_rejects (test_paper_desk.PaperDeskTests.test_daily_loss_cap_rejects) ... ok
+test_invalid_stop_or_nonfinite_rejected (test_paper_desk.PaperDeskTests.test_invalid_stop_or_nonfinite_rejected) ... ok
+test_kill_switch_blocks_entries (test_paper_desk.PaperDeskTests.test_kill_switch_blocks_entries) ... ok
+test_mark_to_market_daily_loss (test_paper_desk.PaperDeskTests.test_mark_to_market_daily_loss) ... ok
+test_midnight_reset_keeps_position (test_paper_desk.PaperDeskTests.test_midnight_reset_keeps_position) ... ok
+test_missing_or_mismatched_mark_rejected (test_paper_desk.PaperDeskTests.test_missing_or_mismatched_mark_rejected) ... ok
+test_no_short_or_unknown_symbol (test_paper_desk.PaperDeskTests.test_no_short_or_unknown_symbol) ... ok
+test_unauthorized_or_stale_rejected (test_paper_desk.PaperDeskTests.test_unauthorized_or_stale_rejected) ... ok
+test_no_exit_above_stop (test_paper_stops.PaperStopTests.test_no_exit_above_stop) ... ok
+test_stale_observation_cannot_trigger_exit (test_paper_stops.PaperStopTests.test_stale_observation_cannot_trigger_exit) ... ok
+test_stop_executes_at_gapped_price_not_stop_price (test_paper_stops.PaperStopTests.test_stop_executes_at_gapped_price_not_stop_price) ... ok
+test_stop_mark_and_close_record_one_event (test_paper_stops.PaperStopTests.test_stop_mark_and_close_record_one_event) ... ok
+test_cancel_releases_reserved_risk (test_pending_orders.PendingOrderTests.test_cancel_releases_reserved_risk) ... ok
+test_duplicate_order_id_never_reused (test_pending_orders.PendingOrderTests.test_duplicate_order_id_never_reused) ... ok
+test_fill_is_atomic_and_idempotent (test_pending_orders.PendingOrderTests.test_fill_is_atomic_and_idempotent) ... ok
+test_fill_without_reauthorization_is_rejected (test_pending_orders.PendingOrderTests.test_fill_without_reauthorization_is_rejected) ... ok
+test_kill_switch_blocks_pending_fill (test_pending_orders.PendingOrderTests.test_kill_switch_blocks_pending_fill) ... ok
+test_pending_risk_reservation_blocks_second_order (test_pending_orders.PendingOrderTests.test_pending_risk_reservation_blocks_second_order) ... ok
+test_reservations_survive_restart (test_pending_orders.PendingOrderTests.test_reservations_survive_restart) ... ok
+test_close_persists_realized_pnl (test_persistent_paper.PersistentPaperTests.test_close_persists_realized_pnl) ... ok
+test_corrupt_reservation_fails_restart_reconciliation (test_persistent_paper.PersistentPaperTests.test_corrupt_reservation_fails_restart_reconciliation) ... ok
+test_corrupt_state_fails_closed (test_persistent_paper.PersistentPaperTests.test_corrupt_state_fails_closed) ... ok
+test_daily_reset_preserves_positions (test_persistent_paper.PersistentPaperTests.test_daily_reset_preserves_positions) ... ok
+test_event_log_tracks_changes (test_persistent_paper.PersistentPaperTests.test_event_log_tracks_changes) ... ok
+test_kill_switch_persists_across_restart (test_persistent_paper.PersistentPaperTests.test_kill_switch_persists_across_restart) ... ok
+test_reconcile_valid_ledger_after_restart (test_persistent_paper.PersistentPaperTests.test_reconcile_valid_ledger_after_restart) ... ok
+test_reconciliation_rejects_tampered_position_risk (test_persistent_paper.PersistentPaperTests.test_reconciliation_rejects_tampered_position_risk) ... ok
+test_rejected_order_does_not_mutate_balances (test_persistent_paper.PersistentPaperTests.test_rejected_order_does_not_mutate_balances) ... ok
+test_restart_recovers_cash_positions_and_marks (test_persistent_paper.PersistentPaperTests.test_restart_recovers_cash_positions_and_marks) ... ok
+test_utc_roll_survives_restart_and_rejects_rollback (test_persistent_paper.PersistentPaperTests.test_utc_roll_survives_restart_and_rejects_rollback) ... ok
+test_kill_switch_survives_restart_and_blocks_fill (test_phase2_adversarial.AdversarialTests.test_kill_switch_survives_restart_and_blocks_fill) ... ok
+test_parallel_reservations_never_exceed_risk (test_phase2_adversarial.AdversarialTests.test_parallel_reservations_never_exceed_risk) ... /usr/local/lib/python3.13/concurrent/futures/_base.py:329: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f67cc417970>
+  def __init__(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/concurrent/futures/_base.py:329: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f67cc4173d0>
+  def __init__(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/concurrent/futures/_base.py:329: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f67cc417880>
+  def __init__(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/concurrent/futures/_base.py:329: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f67cc416d40>
+  def __init__(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+/usr/local/lib/python3.13/concurrent/futures/_base.py:329: ResourceWarning: unclosed database in <sqlite3.Connection object at 0x7f67cc31e7a0>
+  def __init__(self):
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+ok
+test_reject_forged_authorization_types (test_phase2_adversarial.AdversarialTests.test_reject_forged_authorization_types) ... ok
+test_tampered_pending_cash_fails_closed_on_restart (test_phase2_adversarial.AdversarialTests.test_tampered_pending_cash_fails_closed_on_restart) ... ok
+test_audit_and_report_written (test_pipeline.PipelineTests.test_audit_and_report_written) ... ok
+test_produces_rolling_report (test_pipeline.PipelineTests.test_produces_rolling_report) ... ok
+test_rejects_insufficient_training_data (test_pipeline.PipelineTests.test_rejects_insufficient_training_data) ... ok
+test_csv_requires_timezone (test_research.ResearchTests.test_csv_requires_timezone) ... ok
+test_end_flat (test_research.ResearchTests.test_end_flat) ... ok
+test_fees_reduce_returns (test_research.ResearchTests.test_fees_reduce_returns) ... ok
+test_grid_sorted (test_research.ResearchTests.test_grid_sorted) ... ok
+test_holdout_split (test_research.ResearchTests.test_holdout_split) ... ok
+test_no_future_signal (test_research.ResearchTests.test_no_future_signal) ... ok
+test_reject_nonfinite_and_excessive_costs (test_research.ResearchTests.test_reject_nonfinite_and_excessive_costs) ... ok
+test_reject_noninteger_windows (test_research.ResearchTests.test_reject_noninteger_windows) ... ok
+test_reject_unsorted (test_research.ResearchTests.test_reject_unsorted) ... ok
+test_accepts_five_dollars_at_500_equity (test_risk.RiskTests.test_accepts_five_dollars_at_500_equity) ... ok
+test_rejects_daily_loss_limit (test_risk.RiskTests.test_rejects_daily_loss_limit) ... ok
+test_rejects_more_than_one_percent (test_risk.RiskTests.test_rejects_more_than_one_percent) ... ok
+test_rejects_nonpositive_equity (test_risk.RiskTests.test_rejects_nonpositive_equity) ... ok
+test_all_families (test_signals_simulator.SignalTests.test_all_families) ... ok
+test_future_price_does_not_change_signal (test_signals_simulator.SignalTests.test_future_price_does_not_change_signal) ... ok
+test_invalid_family (test_signals_simulator.SignalTests.test_invalid_family) ... ok
+test_costs_reduce_equity (test_signals_simulator.SimulatorTests.test_costs_reduce_equity) ... ok
+test_reject_invalid_cost (test_signals_simulator.SimulatorTests.test_reject_invalid_cost) ... ok
+test_screen_multiple_families (test_signals_simulator.SimulatorTests.test_screen_multiple_families) ... ok
+test_backtest (test_tools.RegistryTests.test_backtest) ... ok
+test_candidates (test_tools.RegistryTests.test_candidates) ... ok
+test_reject_bad_bars (test_tools.RegistryTests.test_reject_bad_bars) ... ok
+test_reject_crm (test_tools.RegistryTests.test_reject_crm) ... ok
+test_reject_excessive_grid (test_tools.RegistryTests.test_reject_excessive_grid) ... ok
+test_reject_unknown (test_tools.RegistryTests.test_reject_unknown) ... ok
+test_role_catalog (test_tools.RegistryTests.test_role_catalog) ... ok
+
+----------------------------------------------------------------------
+Ran 98 tests in 0.362s
+
+OK

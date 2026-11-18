@@ -1,0 +1,12 @@
+DEFECT P1 unapproved strategy fills via PendingOrders directly 
+DEFECT P2 controller accepts absurd price 1e9 with self-supplied timestamp 
+DEFECT P3 fabricated mark+close realizes P&L and passes restart reconcile pnl=999900 equity_after_restart=1000400.0
+DEFECT P4 price observed at 80 (< stop 95) via observe() leaves position open; next stop check at 96 does nothing positions=1
+DEFECT P5 simultaneous gap loss exceeds 3% daily threshold despite 1% planned risk filled_eth=True loss=$36.70 (7.34% of 500) kill_switch=False
+DEFECT P6 arbitrary future clock accepted by roll_utc_day; desk then refuses all orders until 2099 raised Clock rollback detected
+DEFECT P7 tampered cash/baseline + deleted event log pass restart reconcile equity=1000000
+DEFECT P8 one-cent move makes reservation unfillable; its risk stays locked and blocks new orders 
+DEFECT P9 close after concurrent stop closes the wrong position before=[98, 96, 90] after=[96] (intended to close stop=96)
+DEFECT P10 positions carry no strategy_id/order_id PaperPosition(symbol='BTC/USD', quantity=0.5, entry_price=100, stop_price=96, risk_usd=2.0)
+DEFECT P11 event log has no timestamp column ['seq', 'kind', 'payload']
+DEFECT P12 Bull Agent emits STRATEGY_AUTHORIZED spoofing producer=PORTFOLIO_MANAGER 

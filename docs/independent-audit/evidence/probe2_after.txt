@@ -1,0 +1,4 @@
+PERF reserve+fill pairs: 200 in 1.01s = 199/s; positions=200; db=237568 bytes
+PERF stop-mark evaluations with 200 open positions: 301/s
+reserve during contended halt -> refused: True in 0.00s; halt flag: True
+KILL-SWITCH while another writer holds the lock: {'r': 'OperationalError: database is locked', 't': 10.027000773000054} persisted kill_switch: False

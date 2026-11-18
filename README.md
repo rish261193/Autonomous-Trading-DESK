@@ -10,6 +10,10 @@ GitHub Actions run [#85](https://github.com/rish261193/Autonomous-Trading-DESK/a
 
 The earlier failing CI runs #63–#77 were followed by successful runs #78–#85. The failures included outdated tests after direct-entry removal and changed fill authorization. The full source-level audit and unresolved release gates are recorded in [Phase 2 independent audit](docs/PHASE2_INDEPENDENT_AUDIT.md).
 
+## Independent audit (2026-11-18)
+
+An independent full-system review of `53e0870` is in [docs/independent-audit/](docs/independent-audit/README.md). Summary: **not ready for unattended paper trading; no trading edge demonstrated.** On real 2018–2026 data the existing research baselines underperformed buy-and-hold out of sample. The audit branch fixes stop evaluation on ordinary marks, the caller-controlled clock, ledger tamper detection (hash-chained, replay-verified events), position attribution, kill-switch reliability under DB contention, and agent producer spoofing. Behaviour changes: `PersistentPaperDesk.mark()` now closes crossed stops, and a caller-supplied `now` must agree with the trusted clock. Open Critical findings are F-01 (caller-asserted authorization) and F-02 (unauthenticated prices).
+
 ## Operating constraints
 
 | Control | Target |
