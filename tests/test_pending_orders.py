@@ -31,8 +31,8 @@ class PendingOrderTests(unittest.TestCase):
 
     def test_fill_is_atomic_and_idempotent(self):
         self.assertTrue(self.orders.reserve("a", **self.intent))
-        self.assertTrue(self.orders.fill("a"))
-        self.assertFalse(self.orders.fill("a"))
+        self.assertTrue(self.orders.fill("a", strategy_authorized=True, market_data_fresh=True, expected_strategy_id="momentum-v1", expected_symbol="BTC/USD"))
+        self.assertFalse(self.orders.fill("a", strategy_authorized=True, market_data_fresh=True, expected_strategy_id="momentum-v1", expected_symbol="BTC/USD"))
         state = PersistentPaperDesk(self.path).snapshot()
         self.assertEqual(state.cash_usd, 400)
         self.assertEqual(len(state.positions), 1)
@@ -40,14 +40,22 @@ class PendingOrderTests(unittest.TestCase):
     def test_cancel_releases_reserved_risk(self):
         self.assertTrue(self.orders.reserve("a", **self.intent))
         self.assertTrue(self.orders.cancel("a"))
-        self.assertFalse(self.orders.fill("a"))
+        self.assertFalse(self.orders.fill("a", strategy_authorized=True, market_data_fresh=True, expected_strategy_id="momentum-v1", expected_symbol="BTC/USD"))
         self.assertTrue(self.orders.reserve("b", **self.intent))
 
     def test_kill_switch_blocks_pending_fill(self):
         self.assertTrue(self.orders.reserve("a", **self.intent))
         self.desk.halt()
-        self.assertFalse(self.orders.fill("a"))
+        self.assertFalse(self.orders.fill("a", strategy_authorized=True, market_data_fresh=True, expected_strategy_id="momentum-v1", expected_symbol="BTC/USD"))
         self.assertEqual(self.desk.snapshot().cash_usd, 500)
+
+    def test_fill_without_reauthorization_is_rejected(self):
+        self.assertTrue(self.orders.reserve("a", **self.intent))
+        self.assertFalse(self.orders.fill("a"))
+        self.assertFalse(self.orders.fill("a", strategy_authorized=True,
+                                          market_data_fresh=True,
+                                          expected_strategy_id="other",
+                                          expected_symbol="BTC/USD"))
 
     def test_reservations_survive_restart(self):
         self.assertTrue(self.orders.reserve("a", **self.intent))
