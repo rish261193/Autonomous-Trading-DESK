@@ -40,9 +40,8 @@ def simulate(bars: Sequence[Bar], spec: SignalSpec, costs: Costs = Costs(),
     curve = [cash]
     for i in range(spec.lookback + 1, len(bars)):
         price = closes[i]
-        day_change = bars[i].timestamp.date() != bars[i-1].timestamp.date()
-        # Sell at first available next-day observation, not guaranteed by midnight.
-        if units and (day_change or i == len(bars)-1):
+        # No UTC midnight liquidation; final-bar exit is accounting only.
+        if units and i == len(bars)-1:
             gross = units * price
             fee = gross * charge
             cash += gross - fee
