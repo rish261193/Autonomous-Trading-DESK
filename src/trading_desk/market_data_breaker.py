@@ -1,12 +1,12 @@
-"""Fail-closed circuit breaker for paper market-data acquisition.
+"""Fail-closed paper market-data circuit breaker.
 
-After repeated feed failures, require explicit operator reset. No autonomous
-agent can reset this breaker through the trade-intent API.
+When the threshold is reached, persist the desk kill switch BEFORE returning.
+No strategy-facing reset exists. A failed halt persistence operation also
+fails closed; operator intervention is required.
 """
 from __future__ import annotations
 
 from threading import Lock
-from time import monotonic
 
 
 class MarketDataHalted(RuntimeError):
@@ -14,13 +14,16 @@ class MarketDataHalted(RuntimeError):
 
 
 class MarketDataCircuitBreaker:
-    def __init__(self, source, *, failure_threshold=3):
+    def __init__(self, source, *, failure_threshold=3, on_halt=None):
         if not callable(source):
             raise ValueError("Price source required")
         if type(failure_threshold) is not int or not 1 <= failure_threshold <= 100:
             raise ValueError("Invalid failure threshold")
+        if on_halt is not None and not callable(on_halt):
+            raise ValueError("Halt callback must be callable")
         self._source = source
         self._threshold = failure_threshold
+        self._on_halt = on_halt
         self._failures = 0
         self._halted = False
         self._lock = Lock()
@@ -31,8 +34,7 @@ class MarketDataCircuitBreaker:
             return self._halted
 
     def __call__(self, symbol):
-        # Hold lock during source call: concurrent callers cannot slip through
-        # a transition to halted. Owner must configure source timeouts.
+        # Serialize quote calls and halt transitions; source must have a timeout.
         with self._lock:
             if self._halted:
                 raise MarketDataHalted("Market-data circuit breaker is halted")
@@ -40,16 +42,23 @@ class MarketDataCircuitBreaker:
                 quote = self._source(symbol)
                 if quote is None:
                     raise ValueError("Missing quote")
-            except Exception:
+            except Exception as source_error:
                 self._failures += 1
                 if self._failures >= self._threshold:
                     self._halted = True
+                    if self._on_halt is not None:
+                        try:
+                            self._on_halt()
+                        except Exception as halt_error:
+                            raise MarketDataHalted(
+                                "Feed failed and persistent halt could not be confirmed"
+                            ) from halt_error
                 raise
             self._failures = 0
             return quote
 
     def reset_by_owner(self):
-        """Only the owner process may invoke this; never expose via agent API."""
+        """Reset local counter only. NEVER clears a persistent ledger halt."""
         with self._lock:
             self._halted = False
             self._failures = 0
