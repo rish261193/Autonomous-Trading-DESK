@@ -1,7 +1,7 @@
 # Evidence-based progress tracker
 
 ## Implemented in repository
-- Eleven roles and two-layer architecture documented
+- Eleven roles and two-layer architecture documented\n- 24/7 crypto holding policy: no forced midnight close; UTC daily loss accounting
 - Offline SMA baseline, train/holdout evaluation, rolling split utilities
 - Data fingerprint and research audit record helpers
 - Equity metrics, cost assumptions, unit test definitions
@@ -13,7 +13,7 @@
 - Successful end-to-end CI run and independently verified test results
 - Real BTC/ETH historical dataset and credible after-cost results
 - Multiple distinct strategy families or autonomous AI hypothesis discovery
-- Robust realistic fills, spread/liquidity, overnight cutoff, stops
+- Robust realistic fills, spread/liquidity, 24/7 exposure controls, stops
 - Complete non-overridable risk gateway integrated with state and orders
 - Paper broker connectivity, reconciliation, execution and performance audit
 - Event-driven orchestration of eleven AI roles
