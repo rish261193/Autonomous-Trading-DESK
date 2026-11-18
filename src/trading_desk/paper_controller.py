@@ -32,7 +32,7 @@ class GuardedPaperController:
         self.approved_strategies = approved_strategies
         self.max_age_seconds = max_age_seconds
 
-    def observe(self, observation: PriceObservation, *, now: datetime) -> bool:
+    def valid_observation(self, observation: PriceObservation, *, now: datetime) -> bool:
         if (not isinstance(now, datetime) or now.tzinfo is None or
                 not isinstance(observation.timestamp, datetime) or
                 observation.timestamp.tzinfo is None or
@@ -43,6 +43,11 @@ class GuardedPaperController:
         age = (now.astimezone(timezone.utc) -
                observation.timestamp.astimezone(timezone.utc)).total_seconds()
         if not 0 <= age <= self.max_age_seconds:
+            return False
+        return True
+
+    def observe(self, observation: PriceObservation, *, now: datetime) -> bool:
+        if not self.valid_observation(observation, now=now):
             return False
         self.desk.mark(observation.symbol, observation.price)
         return True
