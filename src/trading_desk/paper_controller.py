@@ -72,4 +72,6 @@ class GuardedPaperController:
         if not self.observe(observation, now=now):
             return False
         return self.orders.fill(order_id, strategy_authorized=True,
-                                market_data_fresh=True)
+                                market_data_fresh=True,
+                                expected_strategy_id=strategy_id,
+                                expected_symbol=observation.symbol)
