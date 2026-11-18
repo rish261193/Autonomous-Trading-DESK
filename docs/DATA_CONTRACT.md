@@ -4,7 +4,7 @@ Input CSV: `timestamp,close`, with ISO 8601 timezone-aware timestamps in strictl
 
 ## Execution assumptions and limits
 
-The initial SMA strategy uses only prior-bar observations to decide whether to trade at the current bar's close. This simplified fill is not a realistic order-book execution simulation. It assumes no spread variation, price impact, partial fills, outages, funding, taxes, or minimum order sizes. Trading costs are configurable basis-point estimates. UTC date transitions trigger liquidation at the first available bar of the new day, which may be after midnight; therefore the implementation **does not yet guarantee no overnight exposure**. Do not use it to place orders.
+The initial SMA strategy uses only prior-bar observations to decide whether to trade at the current bar's close. This simplified fill is not a realistic order-book execution simulation. It assumes no spread variation, price impact, partial fills, outages, funding, taxes, or minimum order sizes. Trading costs are configurable basis-point estimates. Positions may remain open across UTC date boundaries. The final available bar closes any remaining simulated position solely to report a finite backtest result. The UTC daily loss accounting window resets at 00:00 UTC, but the risk gateway must still account for open exposure and unrealized P&L across that boundary. Do not use it to place orders.
 
 A single train/holdout split is a research demonstration, not rigorous walk-forward optimization. The lab must later add purging, repeated rolling validation, benchmark comparisons, execution-aware event simulation, position sizing and independent risk-gateway checks.
 
