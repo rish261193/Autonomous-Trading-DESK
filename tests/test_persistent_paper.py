@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timedelta, timezone
 import sqlite3
 import tempfile
 import unittest
@@ -54,10 +55,22 @@ class PersistentPaperTests(unittest.TestCase):
         self.assertTrue(self.orders.reserve("entry", **self.order))
         self.assertTrue(self.orders.fill("entry", strategy_authorized=True, market_data_fresh=True, expected_strategy_id="momentum-v1", expected_symbol="BTC/USD"))
         self.desk.mark("BTC/USD", 102)
-        self.desk.reset_daily_baseline()
+        with self.assertRaises(RuntimeError):
+            self.desk.reset_daily_baseline()
+        tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
+        self.assertTrue(self.desk.roll_utc_day(now=tomorrow))
+        self.assertFalse(self.desk.roll_utc_day(now=tomorrow))
         state = PersistentPaperDesk(self.path).snapshot()
         self.assertEqual(state.day_start_equity_usd, 502)
         self.assertEqual(len(state.positions), 1)
+
+    def test_utc_roll_survives_restart_and_rejects_rollback(self):
+        tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
+        self.assertTrue(self.desk.roll_utc_day(now=tomorrow))
+        restarted = PersistentPaperDesk(self.path)
+        self.assertFalse(restarted.roll_utc_day(now=tomorrow))
+        with self.assertRaises(ValueError):
+            restarted.roll_utc_day(now=tomorrow - timedelta(days=1))
 
     def test_corrupt_state_fails_closed(self):
         with sqlite3.connect(self.path) as db:
