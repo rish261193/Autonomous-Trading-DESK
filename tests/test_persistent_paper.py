@@ -22,7 +22,7 @@ class PersistentPaperTests(unittest.TestCase):
 
     def test_restart_recovers_cash_positions_and_marks(self):
         self.assertTrue(self.orders.reserve("entry", **self.order))
-        self.assertTrue(self.orders.fill("entry"))
+        self.assertTrue(self.orders.fill("entry", strategy_authorized=True, market_data_fresh=True, expected_strategy_id="momentum-v1", expected_symbol="BTC/USD"))
         restarted = PersistentPaperDesk(self.path)
         state = restarted.snapshot()
         self.assertEqual(state.cash_usd, 400)
@@ -42,7 +42,7 @@ class PersistentPaperTests(unittest.TestCase):
 
     def test_close_persists_realized_pnl(self):
         self.assertTrue(self.orders.reserve("entry", **self.order))
-        self.assertTrue(self.orders.fill("entry"))
+        self.assertTrue(self.orders.fill("entry", strategy_authorized=True, market_data_fresh=True, expected_strategy_id="momentum-v1", expected_symbol="BTC/USD"))
         self.desk.mark("BTC/USD", 102)
         self.assertEqual(self.desk.close(0, 102), 2)
         state = PersistentPaperDesk(self.path).snapshot()
@@ -52,7 +52,7 @@ class PersistentPaperTests(unittest.TestCase):
 
     def test_daily_reset_preserves_positions(self):
         self.assertTrue(self.orders.reserve("entry", **self.order))
-        self.assertTrue(self.orders.fill("entry"))
+        self.assertTrue(self.orders.fill("entry", strategy_authorized=True, market_data_fresh=True, expected_strategy_id="momentum-v1", expected_symbol="BTC/USD"))
         self.desk.mark("BTC/USD", 102)
         self.desk.reset_daily_baseline()
         state = PersistentPaperDesk(self.path).snapshot()
@@ -71,7 +71,7 @@ class PersistentPaperTests(unittest.TestCase):
 
     def test_event_log_tracks_changes(self):
         self.assertTrue(self.orders.reserve("entry", **self.order))
-        self.assertTrue(self.orders.fill("entry"))
+        self.assertTrue(self.orders.fill("entry", strategy_authorized=True, market_data_fresh=True, expected_strategy_id="momentum-v1", expected_symbol="BTC/USD"))
         with sqlite3.connect(self.path) as db:
             events = [row[0] for row in db.execute("SELECT kind FROM events ORDER BY seq")]
         self.assertEqual(events, ["initialize", "mark", "reserve", "fill"])
