@@ -10,10 +10,15 @@ The `PaperDesk` class is an **in-memory, single-process research prototype**. `P
 - Kill switch blocks new entries; daily baseline reset preserves positions
 - Fail-closed behavior when price marks are missing or entry prices disagree with marks
 
+## Pending-order prototype
+- `PendingOrders` adds SQLite-backed unique IDs, reserved cash/risk, cancellations and synthetic fills
+- The legacy direct `PersistentPaperDesk.enter()` API still bypasses reservations and must be removed before any deployment
+- Pending orders are synthetic, not reconciled against an exchange; no partial fills or broker acknowledgement
+
 ## Not implemented — blockers
 - No trusted market-data timestamps, freshness verifier, or authenticated strategy authorization
 - SQLite now persists snapshots, event history, positions and kill switch across restarts, but events are not tamper-evident and recovery has not been independently crash-tested
-- No broker/order reconciliation, pending-order accounting, idempotency, partial fills, fees, or concurrency protection
+- Pending reservations and order-ID idempotency exist, but broker reconciliation, partial fills, fees, and end-to-end enforcement are still missing
 - No automatic stop execution, gaps/slippage modeling, or guarantee that stop-defined losses are bounded
 - No automated UTC-day boundary detection; caller explicitly resets baseline
 - No connection between research `simulate` / `backtest` and this ledger
