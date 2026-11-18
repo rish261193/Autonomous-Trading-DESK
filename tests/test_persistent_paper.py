@@ -87,6 +87,16 @@ class PersistentPaperTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             PersistentPaperDesk(self.path)
 
+    def test_corrupt_reservation_fails_restart_reconciliation(self):
+        self.assertTrue(self.orders.reserve("entry", **self.order))
+        with sqlite3.connect(self.path) as db:
+            db.execute("UPDATE reservations SET payload=? WHERE order_id=?",
+                       (json.dumps({"symbol": "BTC/USD", "strategy_id": "momentum-v1",
+                                    "price": 100, "stop_price": 95, "quantity": 1,
+                                    "notional": 600, "risk": 5}), "entry"))
+        with self.assertRaises(ValueError):
+            PersistentPaperDesk(self.path)
+
     def test_corrupt_state_fails_closed(self):
         with sqlite3.connect(self.path) as db:
             db.execute("UPDATE state SET payload=?", (json.dumps({
