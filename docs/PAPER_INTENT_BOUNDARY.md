@@ -4,7 +4,7 @@ The paper-only `TrustedPaperIntentService` accepts `PaperBuyIntent` objects, rea
 
 ## Deployment security requirement
 
-The strategy worker and paper service MUST run under separate OS identities or isolated containers, with the SQLite database and halt file writable only by the service identity. Do not mount the service database into the strategy container. The HTTP API binds only to `127.0.0.1`; **loopback is not authentication** and is not safe against arbitrary same-host processes. A future deployment must use authenticated IPC (e.g. permission-restricted Unix-domain socket with peer credentials) or authenticated service networking before accepting untrusted agents. Do not expose port 8765 to the internet. The service's strategy allowlist is not a cryptographic identity proof.
+The strategy worker and paper service MUST run under separate OS identities or isolated containers, with the SQLite database and halt file writable only by the service identity. Do not mount the service database into the strategy container. The HTTP API binds only to `127.0.0.1` and now requires a shared-secret HMAC signature over the exact body, timestamp and nonce (30-second clock window, 60-second in-memory replay cache). Generate and distribute a unique 32-byte-or-longer random secret through a restricted secret mount, never source control. **Loopback and HMAC alone are not OS isolation.** The replay cache is not durable across restarts and multiple service replicas cannot share it. A future deployment should use permission-restricted Unix-domain sockets with peer credentials or a hardened authenticated service network, along with separate OS identities and database ACLs. Do not expose port 8765 to the internet. The service's strategy allowlist is not a cryptographic identity proof.
 
 ## Price-source limitations
 
@@ -12,7 +12,7 @@ The strategy worker and paper service MUST run under separate OS identities or i
 
 ## Remaining blockers
 
-- F-01: process separation, IPC authentication, database access control and integration tests remain open.
+- F-01: HMAC request authentication is implemented; process separation, durable replay protection, database access control and adversarial deployment tests remain open.
 - F-02: independent price provenance, stale-event checks and plausibility checks remain open.
 - F-04/F-09: execution fees, slippage, minimum order sizes, partial fills and reservation expiry remain open.
 - The HTTP API currently reserves only; a controlled fill workflow remains to be designed and tested.
