@@ -168,8 +168,11 @@ class PersistentPaperDesk:
 
     def roll_utc_day(self, *, now=None):
         """Roll at most once per UTC calendar date, transactionally with the ledger."""
+        actual_now = datetime.now(timezone.utc)
         if now is None:
-            now = datetime.now(timezone.utc)
+            now = actual_now
+        elif abs((now.astimezone(timezone.utc) - actual_now).total_seconds()) > 120:
+            raise ValueError("Cannot roll ledger using an arbitrary clock")
         if not isinstance(now, datetime) or now.tzinfo is None:
             raise ValueError("UTC-aware datetime required")
         today = now.astimezone(timezone.utc).date().isoformat()
