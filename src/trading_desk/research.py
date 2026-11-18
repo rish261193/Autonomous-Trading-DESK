@@ -66,7 +66,9 @@ def backtest(bars: Sequence[Bar], fast: int, slow: int, costs: Costs = Costs(),
     This research baseline does NOT implement stop losses or the risk gateway.
     """
     validate_bars(bars)
-    if not (1 <= fast < slow < len(bars)):
+    if (not isinstance(fast, int) or isinstance(fast, bool) or
+        not isinstance(slow, int) or isinstance(slow, bool) or
+        not 1 <= fast < slow < len(bars)):
         raise ValueError("require 1 <= fast < slow < bar count")
     if initial_equity <= 0 or costs.fee_bps < 0 or costs.slippage_bps < 0:
         raise ValueError("invalid capital or costs")
