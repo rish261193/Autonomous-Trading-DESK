@@ -68,7 +68,7 @@ def research_pipeline(
         "costs": asdict(costs),
         "caveats": [
             "Close-price fills are simplified; execution is not realistic.",
-            "Overnight liquidation occurs at first next-day observation, not necessarily midnight.",
+            "Positions may remain open across UTC midnight; end-of-dataset liquidation is for accounting only.",
             "No stops, portfolio-level exposure, independent risk gateway or actual fills.",
             "Window returns are not a continuous portfolio equity curve.",
             "No real-data profitability evidence or statistical significance is established.",
