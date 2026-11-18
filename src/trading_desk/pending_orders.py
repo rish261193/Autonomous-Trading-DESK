@@ -85,7 +85,8 @@ class PendingOrders:
             db.commit()
             return bool(changed)
 
-    def fill(self, order_id, *, strategy_authorized=False, market_data_fresh=False):
+    def fill(self, order_id, *, strategy_authorized=False, market_data_fresh=False,
+             expected_strategy_id=None, expected_symbol=None):
         """Synthetic fill; require renewed authorization and freshness."""
         if strategy_authorized is not True or market_data_fresh is not True:
             return False
@@ -98,6 +99,10 @@ class PendingOrders:
                 db.commit()
                 return False
             payload = json.loads(row[0])
+            if (payload["strategy_id"] != expected_strategy_id or
+                    payload["symbol"] != expected_symbol):
+                db.commit()
+                return False
             desk = self.desk._load(db)
             others = sum((p["risk"] for p in self._pending(db)
                           if p is not None), 0.0) - payload["risk"]
