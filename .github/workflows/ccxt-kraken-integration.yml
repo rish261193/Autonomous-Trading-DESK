@@ -2,6 +2,13 @@ name: CCXT Kraken public-data integration
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/ccxt-kraken-integration.yml"
+      - "src/trading_desk/ccxt_market_data.py"
+      - "tests/test_ccxt_market_data.py"
+      - "pyproject.toml"
   push:
     branches: [feature/reuse-ccxt-validation]
     paths:
@@ -37,6 +44,8 @@ jobs:
           PY
           python -m pip install /tmp/ccxt-wheel/*.whl
           python -m pip install -e .
+          python -m pip check
+          python -c "import ccxt; print('Installed CCXT:', ccxt.__version__)"
       - name: Run CCXT adapter unit tests
         run: python -m unittest discover -s tests -p 'test_ccxt_market_data.py' -v
       - name: Validate live public Kraken BTC and ETH candles
