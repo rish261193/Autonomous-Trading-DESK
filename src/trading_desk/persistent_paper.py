@@ -105,7 +105,8 @@ class PersistentPaperDesk:
                             {"symbol": symbol, "price": price})
 
     def enter(self, **kwargs):
-        return self._mutate("enter", lambda d: d.enter(**kwargs), kwargs)
+        """Disallow direct entries that bypass pending-order reservations."""
+        raise RuntimeError("Direct entry disabled: use PendingOrders.reserve/fill")
 
     def close(self, index: int, price: float):
         return self._mutate("close", lambda d: d.close(index, price),
