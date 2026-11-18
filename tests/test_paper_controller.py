@@ -34,6 +34,21 @@ class PaperControllerTests(unittest.TestCase):
                 self.assertFalse(self.control.reserve(
                     "order-1", **(self.order | {"observation": obs})))
 
+    def test_fill_requires_current_mark_and_matching_strategy(self):
+        self.assertTrue(self.control.reserve("order-1", **self.order))
+        self.assertFalse(self.control.fill(
+            "order-1", strategy_id="unknown-v1",
+            observation=self.observation, now=self.now))
+        self.desk.mark("BTC/USD", 101)
+        self.assertFalse(self.control.fill(
+            "order-1", strategy_id="approved-v1",
+            observation=self.observation, now=self.now))
+        self.assertEqual(self.desk.snapshot().cash_usd, 500)
+        self.desk.mark("BTC/USD", 100)
+        self.assertTrue(self.control.fill(
+            "order-1", strategy_id="approved-v1",
+            observation=self.observation, now=self.now))
+
     def test_direct_persistent_entry_disabled(self):
         with self.assertRaises(RuntimeError):
             self.desk.enter(strategy_id="approved-v1", symbol="BTC/USD",
