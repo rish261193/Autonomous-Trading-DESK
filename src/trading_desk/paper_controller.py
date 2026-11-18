@@ -52,7 +52,9 @@ class GuardedPaperController:
     def observe(self, observation: PriceObservation, *, now: datetime) -> bool:
         if not self.valid_observation(observation, now=now):
             return False
-        self.desk.mark(observation.symbol, observation.price)
+        # Apply the mark and any triggered stops in the same database transaction.
+        # A plain mark here could leave a breached stop open until another worker runs.
+        self.desk.apply_stop_mark(observation.symbol, observation.price)
         return True
 
     def reserve(self, order_id: str, *, strategy_id: str, symbol: str,
