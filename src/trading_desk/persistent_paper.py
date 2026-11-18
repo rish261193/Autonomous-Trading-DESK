@@ -159,9 +159,37 @@ class PersistentPaperDesk:
             db.commit()
             return result
 
-    def mark(self, symbol: str, price: float):
-        return self._mutate("mark", lambda d: d.mark(symbol, price),
-                            {"symbol": symbol, "price": price})
+    @staticmethod
+    def _mark_and_stop(desk, symbol, price):
+        """Apply a mark and close every position whose stop it crosses."""
+        desk.mark(symbol, price)
+        count, realized, exits = 0, 0.0, []
+        for index in range(len(desk.positions) - 1, -1, -1):
+            position = desk.positions[index]
+            if position.symbol == symbol and price <= position.stop_price:
+                pnl = desk.close(index, price)
+                realized += pnl
+                count += 1
+                exits.append({"order_id": position.order_id,
+                              "strategy_id": position.strategy_id,
+                              "realized_pnl_usd": pnl})
+        return count, realized, exits
+
+    def mark(self, symbol: str, price: float) -> tuple[int, float]:
+        """Record a mark and, in the same transaction, stop out any position
+        whose stop it crosses (audit F-03: marks used to skip stops)."""
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            desk = self._load(db)
+            count, realized, exits = self._mark_and_stop(desk, symbol, price)
+            self._save(db, desk)
+            payload = {"symbol": symbol, "price": price, "result": None}
+            if count:
+                payload |= {"triggered": count, "realized_pnl_usd": realized,
+                            "exits": exits}
+            self._event(db, "mark", payload)
+            db.commit()
+            return count, realized
 
     def enter(self, **kwargs):
         """Disallow direct entries that bypass pending-order reservations."""
@@ -208,17 +236,7 @@ class PersistentPaperDesk:
         with self._connect() as db:
             db.execute("BEGIN IMMEDIATE")
             desk = self._load(db)
-            desk.mark(symbol, price)
-            count, realized, exits = 0, 0.0, []
-            for index in range(len(desk.positions) - 1, -1, -1):
-                position = desk.positions[index]
-                if position.symbol == symbol and price <= position.stop_price:
-                    pnl = desk.close(index, price)
-                    realized += pnl
-                    count += 1
-                    exits.append({"order_id": position.order_id,
-                                  "strategy_id": position.strategy_id,
-                                  "realized_pnl_usd": pnl})
+            count, realized, exits = self._mark_and_stop(desk, symbol, price)
             self._save(db, desk)
             self._event(db, "stop_mark", {
                 "symbol": symbol, "price": price,
