@@ -134,6 +134,7 @@ class PendingOrders:
             entry = {k: payload[k] for k in keys}
             entry["strategy_authorized"] = strategy_authorized
             entry["market_data_fresh"] = market_data_fresh
+            entry["order_id"] = order_id
             if not desk.enter(**entry):
                 db.commit()
                 return False

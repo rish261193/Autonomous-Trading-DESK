@@ -132,6 +132,7 @@ class PersistentPaperDesk:
             if any(p.symbol not in {"BTC/USD", "ETH/USD"} or
                    not all(isfinite(v) and v > 0 for v in (p.quantity, p.entry_price, p.stop_price, p.risk_usd)) or
                    p.stop_price >= p.entry_price or
+                   not isinstance(p.strategy_id, str) or not isinstance(p.order_id, str) or
                    abs(p.risk_usd - (p.entry_price - p.stop_price) * p.quantity) > 1e-7
                    for p in desk.positions):
                 raise ValueError("Corrupt persisted positions")
@@ -166,9 +167,41 @@ class PersistentPaperDesk:
         """Disallow direct entries that bypass pending-order reservations."""
         raise RuntimeError("Direct entry disabled: use PendingOrders.reserve/fill")
 
+    @staticmethod
+    def _close_at(desk, index, price):
+        position = desk.positions[index] if (
+            isinstance(index, int) and not isinstance(index, bool)
+            and 0 <= index < len(desk.positions)) else None
+        pnl = desk.close(index, price)
+        return pnl, position
+
     def close(self, index: int, price: float):
-        return self._mutate("close", lambda d: d.close(index, price),
-                            {"index": index, "price": price})
+        """Legacy index-based close. Prefer close_position(order_id, price):
+        list indices shift when another transaction closes a position."""
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            desk = self._load(db)
+            pnl, position = self._close_at(desk, index, price)
+            self._save(db, desk)
+            self._event(db, "close", {"index": index, "price": price, "result": pnl,
+                                      "order_id": position.order_id,
+                                      "strategy_id": position.strategy_id})
+            db.commit()
+            return pnl
+
+    def close_position(self, order_id: str, price: float) -> float:
+        """Close the position opened by ``order_id`` at the current mark."""
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            desk = self._load(db)
+            index = desk.index_of(order_id)
+            pnl, position = self._close_at(desk, index, price)
+            self._save(db, desk)
+            self._event(db, "close", {"index": index, "price": price, "result": pnl,
+                                      "order_id": position.order_id,
+                                      "strategy_id": position.strategy_id})
+            db.commit()
+            return pnl
 
     def apply_stop_mark(self, symbol: str, price: float) -> tuple[int, float]:
         """Mark and close all triggered positions in one SQLite transaction."""
@@ -176,16 +209,21 @@ class PersistentPaperDesk:
             db.execute("BEGIN IMMEDIATE")
             desk = self._load(db)
             desk.mark(symbol, price)
-            count, realized = 0, 0.0
+            count, realized, exits = 0, 0.0, []
             for index in range(len(desk.positions) - 1, -1, -1):
                 position = desk.positions[index]
                 if position.symbol == symbol and price <= position.stop_price:
-                    realized += desk.close(index, price)
+                    pnl = desk.close(index, price)
+                    realized += pnl
                     count += 1
+                    exits.append({"order_id": position.order_id,
+                                  "strategy_id": position.strategy_id,
+                                  "realized_pnl_usd": pnl})
             self._save(db, desk)
             self._event(db, "stop_mark", {
                 "symbol": symbol, "price": price,
                 "triggered": count, "realized_pnl_usd": realized,
+                "exits": exits,
             })
             db.commit()
             return count, realized

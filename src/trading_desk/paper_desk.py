@@ -23,6 +23,9 @@ class PaperPosition:
     entry_price: float
     stop_price: float
     risk_usd: float
+    # Attribution (audit F-08/F-11). Defaults keep older snapshots loadable.
+    strategy_id: str = ""
+    order_id: str = ""
 
 
 class PaperDesk:
@@ -55,7 +58,7 @@ class PaperDesk:
 
     def enter(self, *, strategy_id: str, symbol: str, price: float,
               stop_price: float, quantity: float, strategy_authorized: bool,
-              market_data_fresh: bool) -> bool:
+              market_data_fresh: bool, order_id: str = "") -> bool:
         """Authorize before mutating cash or positions; never trust supplied P&L."""
         if not all(_positive(v) for v in (price, stop_price, quantity)):
             return False
@@ -90,7 +93,8 @@ class PaperDesk:
         if not authorize(intent, state).allowed or notional > self.cash_usd:
             return False
         self.cash_usd -= notional
-        self.positions.append(PaperPosition(symbol, quantity, price, stop_price, risk))
+        self.positions.append(PaperPosition(symbol, quantity, price, stop_price, risk,
+                                            strategy_id, order_id))
         return True
 
     def close(self, index: int, price: float) -> float:
@@ -109,6 +113,14 @@ class PaperDesk:
         self.daily_realized_pnl_usd += pnl
         self.positions.pop(index)
         return pnl
+
+    def index_of(self, order_id: str) -> int:
+        """Locate an open position by its originating order ID."""
+        matches = [i for i, p in enumerate(self.positions)
+                   if order_id and p.order_id == order_id]
+        if len(matches) != 1:
+            raise ValueError("Unknown or ambiguous position order ID")
+        return matches[0]
 
     def reset_daily_baseline(self) -> None:
         """Accounting reset only; existing positions remain open."""
