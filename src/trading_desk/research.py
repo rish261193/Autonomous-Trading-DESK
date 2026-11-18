@@ -61,7 +61,8 @@ def backtest(bars: Sequence[Bar], fast: int, slow: int, costs: Costs = Costs(),
     """Long-only SMA baseline. Signal from prior close; fill at next bar close.
 
     Close-to-close fills are a simplified model, NOT realistic intrabar execution.
-    No shorting, no leverage. Positions may cross UTC midnight; liquidation\n    at the final available bar is solely a finite backtest accounting convention.
+    No shorting, no leverage. Positions may cross UTC midnight; liquidation
+    at the final available bar is solely a finite backtest accounting convention.
     This research baseline does NOT implement stop losses or the risk gateway.
     """
     validate_bars(bars)
@@ -74,10 +75,8 @@ def backtest(bars: Sequence[Bar], fast: int, slow: int, costs: Costs = Costs(),
     charge = (costs.fee_bps + costs.slippage_bps) / 10000.0
     for i in range(slow, len(bars)):
         price = bars[i].close
-        # A new UTC date means we must NOT carry a position overnight.
-        # Exit at first observed bar of the new day; this is an approximation.
-        new_day = bars[i].timestamp.date() != bars[i-1].timestamp.date()
-        if units and (new_day or i == len(bars)-1):
+        # Only close at the final bar for finite-backtest accounting.
+        if units and i == len(bars)-1:
             cash += units * price * (1 - charge)
             units = 0.0
             trades += 1
