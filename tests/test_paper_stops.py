@@ -19,7 +19,7 @@ class PaperStopTests(unittest.TestCase):
         self.assertTrue(self.controller.reserve(
             "entry", strategy_id="approved-v1", symbol="BTC/USD",
             price=100, stop_price=95, quantity=1, observation=obs, now=self.now))
-        self.assertTrue(self.controller.fill("entry"))
+        self.assertTrue(self.controller.fill("entry", strategy_id="approved-v1", observation=obs, now=self.now))
 
     def test_stop_executes_at_gapped_price_not_stop_price(self):
         result = process_stop_observation(
