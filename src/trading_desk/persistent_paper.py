@@ -112,6 +112,26 @@ class PersistentPaperDesk:
         return self._mutate("close", lambda d: d.close(index, price),
                             {"index": index, "price": price})
 
+    def apply_stop_mark(self, symbol: str, price: float) -> tuple[int, float]:
+        """Mark and close all triggered positions in one SQLite transaction."""
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            desk = self._load(db)
+            desk.mark(symbol, price)
+            count, realized = 0, 0.0
+            for index in range(len(desk.positions) - 1, -1, -1):
+                position = desk.positions[index]
+                if position.symbol == symbol and price <= position.stop_price:
+                    realized += desk.close(index, price)
+                    count += 1
+            self._save(db, desk)
+            self._event(db, "stop_mark", {
+                "symbol": symbol, "price": price,
+                "triggered": count, "realized_pnl_usd": realized,
+            })
+            db.commit()
+            return count, realized
+
     def halt(self):
         return self._mutate("halt", lambda d: d.halt(), {})
 
