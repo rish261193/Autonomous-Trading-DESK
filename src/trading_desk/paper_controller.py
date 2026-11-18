@@ -33,9 +33,12 @@ class GuardedPaperController:
         self.max_age_seconds = max_age_seconds
 
     def valid_observation(self, observation: PriceObservation, *, now: datetime) -> bool:
-        if (not isinstance(now, datetime) or now.tzinfo is None or
+        if (not isinstance(observation, PriceObservation) or
+                not isinstance(now, datetime) or now.tzinfo is None or
+                now.utcoffset() is None or
                 not isinstance(observation.timestamp, datetime) or
                 observation.timestamp.tzinfo is None or
+                observation.timestamp.utcoffset() is None or
                 observation.symbol not in {"BTC/USD", "ETH/USD"} or
                 type(observation.price) not in (int, float) or
                 not isfinite(observation.price) or observation.price <= 0):
@@ -56,6 +59,8 @@ class GuardedPaperController:
                 price: float, stop_price: float, quantity: float,
                 observation: PriceObservation, now: datetime) -> bool:
         if strategy_id not in self.approved_strategies:
+            return False
+        if not isinstance(observation, PriceObservation):
             return False
         if observation.symbol != symbol or observation.price != price:
             return False
