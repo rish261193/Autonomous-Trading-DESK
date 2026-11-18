@@ -1,6 +1,9 @@
 """Circuit-breaker regression tests: halt, recovery, concurrency and isolation."""
 import threading
+import tempfile
 import unittest
+from pathlib import Path
+from trading_desk.persistent_paper import PersistentPaperDesk
 
 from trading_desk.market_data_breaker import MarketDataCircuitBreaker, MarketDataHalted
 
@@ -48,6 +51,36 @@ class BreakerTests(unittest.TestCase):
         self.assertFalse(breaker.halted)
         with self.assertRaises(ConnectionError):
             breaker("BTC/USD")
+
+    def test_trip_persists_ledger_halt_across_restart(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = str(Path(directory) / "desk.sqlite")
+            desk = PersistentPaperDesk(path)
+            def failing(symbol):
+                raise ConnectionError("market-data outage")
+            breaker = MarketDataCircuitBreaker(
+                failing, failure_threshold=2, on_halt=desk.halt)
+            with self.assertRaises(ConnectionError):
+                breaker("BTC/USD")
+            self.assertFalse(desk.snapshot().kill_switch)
+            with self.assertRaises(ConnectionError):
+                breaker("BTC/USD")
+            self.assertTrue(breaker.halted)
+            self.assertTrue(desk.halt_requested())
+            self.assertTrue(PersistentPaperDesk(path).snapshot().kill_switch)
+            breaker.reset_by_owner()
+            self.assertFalse(breaker.halted)
+            self.assertTrue(desk.snapshot().kill_switch)
+
+    def test_failed_halt_callback_fails_closed(self):
+        def failed_halt():
+            raise OSError("ledger unavailable")
+        breaker = MarketDataCircuitBreaker(
+            lambda symbol: (_ for _ in ()).throw(ConnectionError()),
+            failure_threshold=1, on_halt=failed_halt)
+        with self.assertRaises(MarketDataHalted):
+            breaker("BTC/USD")
+        self.assertTrue(breaker.halted)
 
     def test_invalid_configuration(self):
         with self.assertRaises(ValueError):
