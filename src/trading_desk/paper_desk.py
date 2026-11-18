@@ -78,13 +78,13 @@ class PaperDesk:
         state = GatewayState(
             equity_usd=marked_equity,
             day_start_equity_usd=self.day_start_equity_usd,
-            daily_realized_pnl_usd=self.daily_realized_pnl_usd,
+            # Equity delta captures realized and unrealized P&L exactly once.
+            daily_realized_pnl_usd=marked_equity - self.day_start_equity_usd,
             open_risk_usd=open_risk,
             kill_switch=self.kill_switch,
             strategy_authorized=strategy_authorized,
             market_data_fresh=market_data_fresh,
-            daily_unrealized_pnl_usd=marked_equity - self.day_start_equity_usd -
-                                     self.daily_realized_pnl_usd,
+            daily_unrealized_pnl_usd=0.0,
         )
         intent = OrderIntent(strategy_id, symbol, "buy", notional, risk)
         if not authorize(intent, state).allowed or notional > self.cash_usd:
