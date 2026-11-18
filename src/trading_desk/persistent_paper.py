@@ -33,7 +33,7 @@ class PersistentPaperDesk:
                 self._event(db, "initialize", {"initial_equity": initial_equity})
             db.commit()
         # Fail closed on corrupt persisted state, rather than silently reinitializing.
-        self.snapshot()
+        self.reconcile()
 
     @contextmanager
     def _connect(self):
@@ -92,6 +92,30 @@ class PersistentPaperDesk:
     def snapshot(self):
         with self._connect() as db:
             return self._load(db)
+
+    def reconcile(self):
+        """Fail closed on malformed snapshots, invalid reservations, or broken totals."""
+        from math import isfinite
+        with self._connect() as db:
+            desk = self._load(db)
+            if any(p.symbol not in {"BTC/USD", "ETH/USD"} or
+                   not all(isfinite(v) and v > 0 for v in (p.quantity, p.entry_price, p.stop_price, p.risk_usd)) or
+                   p.stop_price >= p.entry_price or
+                   abs(p.risk_usd - (p.entry_price - p.stop_price) * p.quantity) > 1e-7
+                   for p in desk.positions):
+                raise ValueError("Corrupt persisted positions")
+            if any(symbol not in {"BTC/USD", "ETH/USD"} or price <= 0
+                   for symbol, price in desk.marks.items()):
+                raise ValueError("Corrupt persisted marks")
+            if desk.day_start_equity_usd <= 0 or desk.cash_usd < 0:
+                raise ValueError("Corrupt persisted equity")
+            equity = desk.equity()
+            if not isfinite(equity) or equity < 0:
+                raise ValueError("Corrupt portfolio valuation")
+            result = db.execute("PRAGMA quick_check").fetchone()
+            if result is None or result[0] != "ok":
+                raise ValueError("SQLite integrity check failed")
+            return equity
 
     def _mutate(self, kind, operation, payload):
         with self._connect() as db:
