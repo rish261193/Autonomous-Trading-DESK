@@ -13,7 +13,7 @@
 ## Current implementation
 `metrics.py` computes nonannualized period-level volatility, return, and drawdown from supplied equity observations. `validation.py` creates deterministic rolling train/test windows with an optional embargo gap. `audit.py` creates local research records with a data fingerprint. These modules are **building blocks**, not yet integrated into a production backtester, strategy optimizer, or broker execution system.
 
-The existing SMA baseline uses simplified fills, and its midnight handling can leave overnight exposure until the first next-day bar. It must not be connected to live execution. There are no real-data performance results yet.
+The existing SMA baseline uses simplified fills. Positions can remain open across UTC midnight, with final-bar liquidation only for finite-backtest accounting. It must not be connected to live execution. There are no real-data performance results yet.
 
 ## Promotion gates (to implement)
 1. Reproducible dataset and strategy specification.
