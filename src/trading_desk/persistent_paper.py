@@ -15,8 +15,19 @@ from pathlib import Path
 from .paper_desk import PaperDesk, PaperPosition
 
 
+def _system_utc_now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 class PersistentPaperDesk:
-    def __init__(self, path: str, initial_equity: float = 500.0):
+    #: Largest tolerated difference between a caller-supplied time and the
+    #: trusted clock. Restores the guard from 6607789 (reverted in d6072a6).
+    MAX_CLOCK_SKEW_SECONDS = 120
+
+    def __init__(self, path: str, initial_equity: float = 500.0, *, clock=None):
+        """``clock`` is the trusted UTC time source, injected only by the
+        process that owns the ledger (tests use a deterministic clock)."""
+        self._clock = _system_utc_now if clock is None else clock
         self.path = str(path)
         if self.path == ":memory:":
             raise ValueError("Use a file-backed SQLite database")
@@ -25,7 +36,7 @@ class PersistentPaperDesk:
             db.execute("CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY CHECK(id=1), payload TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, payload TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS daily_clock (id INTEGER PRIMARY KEY CHECK(id=1), utc_date TEXT NOT NULL)")
-            db.execute("INSERT OR IGNORE INTO daily_clock(id,utc_date) VALUES (1,?)", (datetime.now(timezone.utc).date().isoformat(),))
+            db.execute("INSERT OR IGNORE INTO daily_clock(id,utc_date) VALUES (1,?)", (self.now().date().isoformat(),))
             db.execute("BEGIN IMMEDIATE")
             if db.execute("SELECT 1 FROM state WHERE id=1").fetchone() is None:
                 desk = PaperDesk(initial_equity)
@@ -186,13 +197,28 @@ class PersistentPaperDesk:
         """Legacy manual reset is unsafe: only the clock-driven UTC roll may reset."""
         raise RuntimeError("Manual daily reset disabled; use roll_utc_day")
 
-    def roll_utc_day(self, *, now=None):
-        """Roll at most once per UTC calendar date, transactionally with the ledger."""
+    def now(self) -> datetime:
+        """Current time from the trusted clock, normalized to UTC."""
+        value = self._clock()
+        if not isinstance(value, datetime) or value.tzinfo is None:
+            raise ValueError("Trusted clock must return a UTC-aware datetime")
+        return value.astimezone(timezone.utc)
+
+    def check_caller_time(self, now) -> datetime:
+        """Reject caller-supplied times that disagree with the trusted clock."""
+        trusted = self.now()
         if now is None:
-            now = datetime.now(timezone.utc)
+            return trusted
         if not isinstance(now, datetime) or now.tzinfo is None:
             raise ValueError("UTC-aware datetime required")
-        today = now.astimezone(timezone.utc).date().isoformat()
+        if abs((now - trusted).total_seconds()) > self.MAX_CLOCK_SKEW_SECONDS:
+            raise ValueError("Caller clock disagrees with trusted clock")
+        return now.astimezone(timezone.utc)
+
+    def roll_utc_day(self, *, now=None):
+        """Roll at most once per UTC calendar date, transactionally with the ledger."""
+        now = self.check_caller_time(now)
+        today = now.date().isoformat()
         with self._connect() as db:
             db.execute("BEGIN IMMEDIATE")
             row = db.execute("SELECT utc_date FROM daily_clock WHERE id=1").fetchone()
