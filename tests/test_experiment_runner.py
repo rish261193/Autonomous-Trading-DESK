@@ -1,4 +1,5 @@
 import csv
+from hashlib import sha256
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
@@ -34,7 +35,17 @@ class ExperimentRunnerTests(unittest.TestCase):
         self.assertEqual(result["evaluated"], 1)
         self.assertEqual(result["long_signals"], 1)
         self.assertEqual(result["price_bars"], 4)
+        self.assertEqual(result["price_data_sha256"], sha256(self.prices.read_bytes()).hexdigest())
+        self.assertEqual(result["signal_data_sha256"], sha256(self.signals.read_bytes()).hexdigest())
+        self.assertEqual(result["evaluation_settings"]["horizon_bars"], 1)
         self.assertIn("cannot establish", result["provenance_warning"])
+
+    def test_file_change_updates_fingerprint(self):
+        before = run_experiment(prices_csv=str(self.prices), signals_csv=str(self.signals), symbol="BTC/USD")
+        self._signals([(self.start.isoformat(), "BTC/USD", "hold", ".75", "2", "b" * 64)])
+        after = run_experiment(prices_csv=str(self.prices), signals_csv=str(self.signals), symbol="BTC/USD")
+        self.assertNotEqual(before["signal_data_sha256"], after["signal_data_sha256"])
+        self.assertEqual(before["price_data_sha256"], after["price_data_sha256"])
 
     def test_rejects_duplicate_signal_timestamp(self):
         row = (self.start.isoformat(), "BTC/USD", "buy", ".75", "2", "a" * 64)
