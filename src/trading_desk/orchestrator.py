@@ -55,6 +55,11 @@ class Orchestrator:
                                                    role, response.outcome))
                 for proposed in response.proposed_events:
                     validate_event(proposed)
+                    # A handler may only emit events under its own role
+                    # (audit F-12). Still not authentication: in-process code
+                    # can construct any object; see AGENT_EVENTS.md.
+                    if proposed.producer is not role:
+                        raise ValueError("Proposed event producer must match handler role")
                     # CRM cannot propose trading or risk decisions, even indirectly.
                     if role is Role.WHATSAPP_CRM and proposed.event_type in (
                         EventType.STRATEGY_AUTHORIZED,
