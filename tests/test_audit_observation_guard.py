@@ -33,6 +33,28 @@ class AuditObservationGuardTests(unittest.TestCase):
         obs = PriceObservation("BTC/USD", 100, datetime(2026, 11, 18, 16))
         self.assertFalse(self.controller.valid_observation(obs, now=self.now))
 
+    def test_reserve_with_valid_observation_then_stop_via_controller(self):
+        obs = PriceObservation("BTC/USD", 100, self.now)
+        self.assertTrue(self.controller.reserve(
+            "entry", strategy_id="approved", symbol="BTC/USD", price=100,
+            stop_price=95, quantity=1, observation=obs, now=self.now))
+        self.assertTrue(self.controller.fill(
+            "entry", strategy_id="approved", observation=obs, now=self.now))
+        self.assertTrue(self.controller.observe(
+            PriceObservation("BTC/USD", 90, self.now), now=self.now))
+        self.assertEqual(len(self.desk.snapshot().positions), 0)
+        self.assertEqual(self.desk.snapshot().cash_usd, 490)
+
+    def test_direct_ledger_mark_cannot_bypass_stop(self):
+        obs = PriceObservation("BTC/USD", 100, self.now)
+        self.assertTrue(self.controller.reserve(
+            "entry", strategy_id="approved", symbol="BTC/USD", price=100,
+            stop_price=95, quantity=1, observation=obs, now=self.now))
+        self.assertTrue(self.controller.fill(
+            "entry", strategy_id="approved", observation=obs, now=self.now))
+        self.desk.mark("BTC/USD", 90)
+        self.assertEqual(len(self.desk.snapshot().positions), 0)
+
     def test_valid_observation_accepted(self):
         obs = PriceObservation("BTC/USD", 100, self.now)
         self.assertTrue(self.controller.valid_observation(obs, now=self.now))
