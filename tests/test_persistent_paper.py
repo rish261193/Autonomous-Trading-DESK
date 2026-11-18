@@ -97,6 +97,16 @@ class PersistentPaperTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             PersistentPaperDesk(self.path)
 
+    def test_reconcile_valid_ledger_after_restart(self):
+        self.assertTrue(self.orders.reserve("entry", **self.order))
+        self.assertTrue(self.orders.fill("entry", strategy_authorized=True,
+                                         market_data_fresh=True,
+                                         expected_strategy_id="momentum-v1",
+                                         expected_symbol="BTC/USD"))
+        restarted = PersistentPaperDesk(self.path)
+        self.assertAlmostEqual(restarted.reconcile(), 500)
+        self.assertAlmostEqual(restarted.snapshot().cash_usd, 400)
+
     def test_corrupt_state_fails_closed(self):
         with sqlite3.connect(self.path) as db:
             db.execute("UPDATE state SET payload=?", (json.dumps({
