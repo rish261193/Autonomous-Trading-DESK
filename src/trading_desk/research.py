@@ -70,7 +70,10 @@ def backtest(bars: Sequence[Bar], fast: int, slow: int, costs: Costs = Costs(),
         not isinstance(slow, int) or isinstance(slow, bool) or
         not 1 <= fast < slow < len(bars)):
         raise ValueError("require 1 <= fast < slow < bar count")
-    if initial_equity <= 0 or costs.fee_bps < 0 or costs.slippage_bps < 0:
+    if not all(isfinite(v) for v in (initial_equity, costs.fee_bps, costs.slippage_bps)):
+        raise ValueError("non-finite capital or costs")
+    if (initial_equity <= 0 or costs.fee_bps < 0 or costs.slippage_bps < 0 or
+        costs.fee_bps + costs.slippage_bps >= 10000):
         raise ValueError("invalid capital or costs")
     cash, units, trades = float(initial_equity), 0.0, 0
     peak, max_dd = cash, 0.0
