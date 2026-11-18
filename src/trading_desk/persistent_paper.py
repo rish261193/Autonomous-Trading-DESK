@@ -6,6 +6,7 @@ the resulting state in one transaction. Use one SQLite database per paper desk.
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 import sqlite3
 from contextlib import contextmanager
 from dataclasses import asdict
@@ -23,6 +24,8 @@ class PersistentPaperDesk:
         with self._connect() as db:
             db.execute("CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY CHECK(id=1), payload TEXT NOT NULL)")
             db.execute("CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, payload TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS daily_clock (id INTEGER PRIMARY KEY CHECK(id=1), utc_date TEXT NOT NULL)")
+            db.execute("INSERT OR IGNORE INTO daily_clock(id,utc_date) VALUES (1,?)", (datetime.now(timezone.utc).date().isoformat(),))
             db.execute("BEGIN IMMEDIATE")
             if db.execute("SELECT 1 FROM state WHERE id=1").fetchone() is None:
                 desk = PaperDesk(initial_equity)
@@ -136,4 +139,30 @@ class PersistentPaperDesk:
         return self._mutate("halt", lambda d: d.halt(), {})
 
     def reset_daily_baseline(self):
-        return self._mutate("daily_reset", lambda d: d.reset_daily_baseline(), {})
+        """Legacy manual reset is unsafe: only the clock-driven UTC roll may reset."""
+        raise RuntimeError("Manual daily reset disabled; use roll_utc_day")
+
+    def roll_utc_day(self, *, now=None):
+        """Roll at most once per UTC calendar date, transactionally with the ledger."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+        if not isinstance(now, datetime) or now.tzinfo is None:
+            raise ValueError("UTC-aware datetime required")
+        today = now.astimezone(timezone.utc).date().isoformat()
+        with self._connect() as db:
+            db.execute("BEGIN IMMEDIATE")
+            row = db.execute("SELECT utc_date FROM daily_clock WHERE id=1").fetchone()
+            if row is None:
+                raise ValueError("Missing UTC clock")
+            if today < row[0]:
+                raise ValueError("Clock rollback detected")
+            if today == row[0]:
+                db.commit()
+                return False
+            desk = self._load(db)
+            desk.reset_daily_baseline()
+            self._save(db, desk)
+            db.execute("UPDATE daily_clock SET utc_date=? WHERE id=1", (today,))
+            self._event(db, "daily_reset", {"utc_date": today})
+            db.commit()
+            return True
