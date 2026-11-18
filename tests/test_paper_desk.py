@@ -36,7 +36,10 @@ class PaperDeskTests(unittest.TestCase):
         self.assertEqual(len(self.desk.positions), 0)
 
     def test_daily_loss_cap_rejects(self):
-        self.desk.daily_realized_pnl_usd = -15
+        self.assertTrue(self.desk.enter(**self.order))
+        self.desk.mark("BTC/USD", 85)
+        self.assertEqual(self.desk.close(0, 85), -15)
+        self.desk.mark("BTC/USD", 100)
         self.assertFalse(self.desk.enter(**self.order))
 
     def test_invalid_stop_or_nonfinite_rejected(self):
