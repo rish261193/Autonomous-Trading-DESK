@@ -2,13 +2,14 @@
 import io
 import json
 import threading
+import time
 import unittest
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 from datetime import datetime, timezone
 
 from trading_desk.kraken_public_prices import KrakenPublicPriceSource
-from trading_desk.paper_intent_http import serve_paper_intents
+from trading_desk.paper_intent_http import serve_paper_intents, sign_intent
 
 
 class FakeResponse(io.BytesIO):
@@ -57,7 +58,8 @@ class StubService:
 
 class HttpTests(unittest.TestCase):
     def setUp(self):
-        self.server = serve_paper_intents(StubService(), port=0)
+        self.secret = b's' * 32
+        self.server = serve_paper_intents(StubService(), secret=self.secret, port=0)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
         self.addCleanup(self.server.server_close)
@@ -66,8 +68,14 @@ class HttpTests(unittest.TestCase):
         self.url = "http://127.0.0.1:%d/v1/paper/intents" % self.server.server_port
 
     def post(self, payload):
-        req = Request(self.url, data=json.dumps(payload).encode(),
-                      headers={"Content-Type": "application/json"})
+        body = json.dumps(payload).encode()
+        stamp = int(time.time())
+        nonce = "abcdef0123456789"
+        req = Request(self.url, data=body,
+                      headers={"Content-Type": "application/json",
+                               "X-Paper-Timestamp": str(stamp),
+                               "X-Paper-Nonce": nonce,
+                               "X-Paper-Signature": sign_intent(self.secret, stamp, nonce, body)})
         try:
             with urlopen(req, timeout=3) as response:
                 return response.status
@@ -87,9 +95,21 @@ class HttpTests(unittest.TestCase):
         self.assertEqual(self.post({"order_id": "1", "strategy_id": "rogue",
             "symbol": "BTC/USD", "quantity": 1, "stop_price": 95}), 403)
 
+    def test_unsigned_request_rejected(self):
+        req = Request(self.url, data=b"{}", method="POST")
+        with self.assertRaises(HTTPError) as context:
+            urlopen(req, timeout=3)
+        self.assertEqual(context.exception.code, 401)
+
+    def test_replay_rejected(self):
+        self.assertEqual(self.post({"order_id": "1", "strategy_id": "approved",
+            "symbol": "BTC/USD", "quantity": 1, "stop_price": 95}), 200)
+        self.assertEqual(self.post({"order_id": "2", "strategy_id": "approved",
+            "symbol": "BTC/USD", "quantity": 1, "stop_price": 95}), 409)
+
     def test_nonloopback_rejected(self):
         with self.assertRaises(ValueError):
-            serve_paper_intents(StubService(), host="0.0.0.0", port=0)
+            serve_paper_intents(StubService(), secret=self.secret, host="0.0.0.0", port=0)
 
 
 if __name__ == "__main__":
