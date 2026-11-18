@@ -141,6 +141,8 @@ class PendingOrders:
             self.desk._save(db, desk)
             db.execute("UPDATE reservations SET status='filled' WHERE order_id=?",
                        (order_id,))
-            self.desk._event(db, "fill", {"order_id": order_id})
+            self.desk._event(db, "fill", {"order_id": order_id} | {
+                k: payload[k] for k in ("strategy_id", "symbol", "price",
+                                        "stop_price", "quantity")})
             db.commit()
             return True

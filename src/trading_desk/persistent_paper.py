@@ -2,9 +2,16 @@
 
 Every operation reloads the committed snapshot under BEGIN IMMEDIATE and saves
 the resulting state in one transaction. Use one SQLite database per paper desk.
+
+Integrity (audit F-07): every event is timestamped and SHA-256 hash-chained,
+and startup reconciliation replays the event log and requires it to reproduce
+the stored snapshot. This detects edits to the snapshot alone, or to the log
+alone. It does NOT stop an attacker who rewrites both and recomputes the
+chain; anchor ``ledger_head()`` outside this database for that.
 """
 from __future__ import annotations
 
+import hashlib
 import json
 from datetime import datetime, timezone
 import sqlite3
@@ -34,10 +41,11 @@ class PersistentPaperDesk:
         Path(self.path).parent.mkdir(parents=True, exist_ok=True)
         with self._connect() as db:
             db.execute("CREATE TABLE IF NOT EXISTS state (id INTEGER PRIMARY KEY CHECK(id=1), payload TEXT NOT NULL)")
-            db.execute("CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, payload TEXT NOT NULL)")
+            db.execute("CREATE TABLE IF NOT EXISTS events (seq INTEGER PRIMARY KEY AUTOINCREMENT, kind TEXT NOT NULL, payload TEXT NOT NULL, created_at_utc TEXT, prev_hash TEXT, hash TEXT)")
             db.execute("CREATE TABLE IF NOT EXISTS daily_clock (id INTEGER PRIMARY KEY CHECK(id=1), utc_date TEXT NOT NULL)")
             db.execute("INSERT OR IGNORE INTO daily_clock(id,utc_date) VALUES (1,?)", (self.now().date().isoformat(),))
             db.execute("BEGIN IMMEDIATE")
+            self._migrate_event_chain(db)
             if db.execute("SELECT 1 FROM state WHERE id=1").fetchone() is None:
                 desk = PaperDesk(initial_equity)
                 self._save(db, desk)
@@ -57,9 +65,45 @@ class PersistentPaperDesk:
             db.close()
 
     @staticmethod
-    def _event(db, kind, payload):
-        db.execute("INSERT INTO events(kind,payload) VALUES (?,?)",
-                   (kind, json.dumps(payload, sort_keys=True, allow_nan=False)))
+    def _chain_hash(prev_hash, kind, payload_text, created_at):
+        material = "\x1f".join((prev_hash, kind, payload_text, created_at))
+        return hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+    def _event(self, db, kind, payload):
+        """Append a timestamped, hash-chained event inside the caller's transaction."""
+        text = json.dumps(payload, sort_keys=True, allow_nan=False)
+        created_at = self.now().isoformat()
+        row = db.execute("SELECT hash FROM events ORDER BY seq DESC LIMIT 1").fetchone()
+        prev_hash = "" if row is None else row[0]
+        if prev_hash is None:
+            raise ValueError("Unchained event log; refusing to append")
+        db.execute("INSERT INTO events(kind,payload,created_at_utc,prev_hash,hash) "
+                   "VALUES (?,?,?,?,?)",
+                   (kind, text, created_at, prev_hash,
+                    self._chain_hash(prev_hash, kind, text, created_at)))
+
+    def _migrate_event_chain(self, db):
+        """Add integrity columns to pre-audit databases and chain legacy rows."""
+        columns = {r[1] for r in db.execute("PRAGMA table_info(events)")}
+        missing = [c for c in ("created_at_utc", "prev_hash", "hash") if c not in columns]
+        for column in missing:
+            db.execute(f"ALTER TABLE events ADD COLUMN {column} TEXT")
+        if missing:
+            prev = ""
+            for seq, kind, text in db.execute(
+                    "SELECT seq, kind, payload FROM events ORDER BY seq").fetchall():
+                digest = self._chain_hash(prev, kind, text, "")
+                db.execute("UPDATE events SET created_at_utc='', prev_hash=?, hash=? "
+                           "WHERE seq=?", (prev, digest, seq))
+                prev = digest
+
+    def ledger_head(self) -> tuple[int, str]:
+        """(sequence, hash) of the newest event, for anchoring outside the DB."""
+        with self._connect() as db:
+            row = db.execute("SELECT seq, hash FROM events ORDER BY seq DESC LIMIT 1").fetchone()
+        if row is None or not row[1]:
+            raise ValueError("Empty or unchained event log")
+        return row[0], row[1]
 
     @staticmethod
     def _load(db):
@@ -147,7 +191,91 @@ class PersistentPaperDesk:
             result = db.execute("PRAGMA quick_check").fetchone()
             if result is None or result[0] != "ok":
                 raise ValueError("SQLite integrity check failed")
+            self._verify(db, desk)
             return equity
+
+    def verify_integrity(self) -> dict:
+        """Verify the hash chain and that replaying events reproduces state."""
+        with self._connect() as db:
+            return self._verify(db, self._load(db))
+
+    @staticmethod
+    def _same(a, b):
+        return abs(a - b) <= 1e-9 * max(1.0, abs(a), abs(b))
+
+    def _verify(self, db, stored):
+        rows = db.execute("SELECT seq, kind, payload, created_at_utc, prev_hash, hash "
+                          "FROM events ORDER BY seq").fetchall()
+        if not rows or rows[0][1] != "initialize":
+            raise ValueError("Event log must start with initialize")
+        prev = ""
+        for seq, kind, text, created_at, prev_hash, digest in rows:
+            if (prev_hash != prev or created_at is None or
+                    digest != self._chain_hash(prev, kind, text, created_at)):
+                raise ValueError(f"Event hash chain broken at seq {seq}")
+            prev = digest
+        reservations = {}
+        if db.execute("SELECT name FROM sqlite_master WHERE type='table' "
+                      "AND name='reservations'").fetchone():
+            reservations = {oid: (json.loads(text), status) for oid, text, status in
+                            db.execute("SELECT order_id, payload, status FROM reservations")}
+        replay, seen = None, {}
+        for seq, kind, text, *_ in rows:
+            event = json.loads(text)
+            if kind == "initialize":
+                if replay is not None:
+                    raise ValueError("Duplicate initialize event")
+                replay = PaperDesk(event["initial_equity"])
+            elif kind in ("mark", "stop_mark"):
+                count, realized, _ = self._mark_and_stop(replay, event["symbol"], event["price"])
+                if (count != event.get("triggered", 0) or
+                        not self._same(realized, event.get("realized_pnl_usd", 0.0))):
+                    raise ValueError(f"Replay mismatch for stop at seq {seq}")
+            elif kind == "close":
+                index = (replay.index_of(event["order_id"]) if event.get("order_id")
+                         else event["index"])
+                if not self._same(replay.close(index, event["price"]), event["result"]):
+                    raise ValueError(f"Replay mismatch for close at seq {seq}")
+            elif kind == "halt":
+                replay.halt()
+            elif kind == "daily_reset":
+                replay.reset_daily_baseline()
+            elif kind in ("reserve", "cancel", "fill"):
+                order_id = event["order_id"]
+                if order_id not in reservations:
+                    raise ValueError(f"Event references unknown reservation at seq {seq}")
+                seen.setdefault(order_id, []).append(kind)
+                if kind == "fill":
+                    order = reservations[order_id][0]
+                    keys = ("strategy_id", "symbol", "price", "stop_price", "quantity")
+                    if any(k in event and event[k] != order[k] for k in keys):
+                        raise ValueError(f"Fill event disagrees with reservation at seq {seq}")
+                    if not replay.enter(**{k: order[k] for k in keys},
+                                        strategy_authorized=True, market_data_fresh=True,
+                                        order_id=order_id):
+                        raise ValueError(f"Replayed fill rejected at seq {seq}")
+            else:
+                raise ValueError(f"Unknown event kind at seq {seq}")
+        # Databases created before this audit lack position attribution.
+        legacy = rows[0][3] == ""
+        expected_status = {("reserve",): "pending", ("reserve", "fill"): "filled",
+                           ("reserve", "cancel"): "cancelled"}
+        for order_id, (_, status) in reservations.items():
+            if expected_status.get(tuple(seen.get(order_id, ()))) != status:
+                raise ValueError("Reservation status disagrees with event log")
+        scalars = ("cash_usd", "day_start_equity_usd", "daily_realized_pnl_usd")
+        if (any(not self._same(getattr(replay, k), getattr(stored, k)) for k in scalars) or
+                replay.kill_switch != stored.kill_switch or
+                replay.marks.keys() != stored.marks.keys() or
+                any(not self._same(replay.marks[k], stored.marks[k]) for k in replay.marks) or
+                len(replay.positions) != len(stored.positions) or
+                any(asdict(a).keys() != asdict(b).keys() or any(
+                    (va != vb and not (legacy and vb == "")) if isinstance(va, str)
+                    else not self._same(va, vb)
+                    for va, vb in zip(asdict(a).values(), asdict(b).values()))
+                    for a, b in zip(replay.positions, stored.positions))):
+            raise ValueError("Stored snapshot does not match event-log replay")
+        return {"events": len(rows), "head_seq": rows[-1][0], "head_hash": prev}
 
     def _mutate(self, kind, operation, payload):
         with self._connect() as db:
