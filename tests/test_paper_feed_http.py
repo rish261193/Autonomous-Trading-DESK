@@ -62,9 +62,10 @@ class HttpTests(unittest.TestCase):
         self.server = serve_paper_intents(StubService(), secret=self.secret, port=0)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
+        # unittest cleanups execute in LIFO order: stop the server before join.
+        self.addCleanup(self.thread.join, timeout=5)
         self.addCleanup(self.server.server_close)
         self.addCleanup(self.server.shutdown)
-        self.addCleanup(self.thread.join)
         self.url = "http://127.0.0.1:%d/v1/paper/intents" % self.server.server_port
 
     def post(self, payload):
