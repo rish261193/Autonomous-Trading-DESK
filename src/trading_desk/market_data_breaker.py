@@ -66,9 +66,30 @@ class MarketDataCircuitBreaker:
         validate this quote before applying a mark.
         """
         with self._lock:
-            quote = self._source(symbol)
-            if quote is None:
-                raise ValueError("Missing recovery quote")
+            if self._halted:
+                # Recovery monitoring never resets the halt or authorizes entries.
+                quote = self._source(symbol)
+                if quote is None:
+                    raise ValueError("Missing recovery quote")
+                return quote
+            # Preserve normal breaker failure accounting before the first trip.
+            try:
+                quote = self._source(symbol)
+                if quote is None:
+                    raise ValueError("Missing quote")
+            except Exception as source_error:
+                self._failures_by_symbol[symbol] = self._failures_by_symbol.get(symbol, 0) + 1
+                if self._failures_by_symbol[symbol] >= self._threshold:
+                    self._halted = True
+                    if self._on_halt is not None:
+                        try:
+                            self._on_halt()
+                        except Exception as halt_error:
+                            raise MarketDataHalted(
+                                "Feed failed and persistent halt could not be confirmed"
+                            ) from halt_error
+                raise
+            self._failures_by_symbol[symbol] = 0
             return quote
 
     def reset_by_owner(self):
