@@ -39,6 +39,45 @@ class BreakerTests(unittest.TestCase):
         self.assertFalse(breaker.halted)
         self.assertEqual(breaker("BTC/USD"), 101)
 
+    def test_healthy_btc_does_not_mask_eth_outage(self):
+        halted = []
+        def source(symbol):
+            if symbol == "ETH/USD":
+                raise ConnectionError("ETH feed unavailable")
+            return 100.0
+        breaker = MarketDataCircuitBreaker(
+            source, failure_threshold=3, on_halt=lambda: halted.append(True))
+        for _ in range(2):
+            with self.assertRaises(ConnectionError):
+                breaker("ETH/USD")
+            self.assertEqual(breaker("BTC/USD"), 100.0)
+            self.assertFalse(breaker.halted)
+        with self.assertRaises(ConnectionError):
+            breaker("ETH/USD")
+        self.assertTrue(breaker.halted)
+        self.assertEqual(halted, [True])
+        with self.assertRaises(MarketDataHalted):
+            breaker("BTC/USD")
+
+    def test_success_resets_only_its_own_symbol_streak(self):
+        attempts = {"ETH/USD": 0}
+        def source(symbol):
+            if symbol == "ETH/USD":
+                attempts[symbol] += 1
+                if attempts[symbol] in (1, 2, 4):
+                    raise ConnectionError("intermittent ETH failure")
+            return 100.0
+        breaker = MarketDataCircuitBreaker(source, failure_threshold=3)
+        with self.assertRaises(ConnectionError):
+            breaker("ETH/USD")
+        with self.assertRaises(ConnectionError):
+            breaker("ETH/USD")
+        self.assertEqual(breaker("ETH/USD"), 100.0)
+        self.assertEqual(breaker("BTC/USD"), 100.0)
+        with self.assertRaises(ConnectionError):
+            breaker("ETH/USD")
+        self.assertFalse(breaker.halted)
+
     def test_owner_reset_restores_calls(self):
         breaker = MarketDataCircuitBreaker(
             lambda symbol: (_ for _ in ()).throw(ConnectionError()),
