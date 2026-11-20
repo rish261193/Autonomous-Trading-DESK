@@ -36,9 +36,11 @@ class TrustedPaperIntentService:
         self._controller = GuardedPaperController(
             desk, approved_strategies, max_age_seconds=max_age_seconds)
 
-    def _observation(self, symbol: str) -> PriceObservation | None:
+    def _observation(self, symbol: str, *, stop_monitoring=False) -> PriceObservation | None:
         try:
-            observation = self._source(symbol)
+            observation = (self._source.observe_for_stops(symbol)
+                           if stop_monitoring and hasattr(self._source, 'observe_for_stops')
+                           else self._source(symbol))
         except Exception:
             return None  # Feed outages must not authorize an order.
         if not isinstance(observation, PriceObservation):
@@ -83,6 +85,6 @@ class TrustedPaperIntentService:
     def observe(self, symbol: str) -> bool:
         if symbol not in {"BTC/USD", "ETH/USD"}:
             return False
-        observation = self._observation(symbol)
+        observation = self._observation(symbol, stop_monitoring=True)
         return (observation is not None and
                 self._controller.observe(observation))
