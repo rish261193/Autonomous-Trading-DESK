@@ -1,7 +1,8 @@
 """Fail-closed paper-trading control plane for trusted inputs.
 
 A caller must explicitly supply an approved strategy registry and UTC-aware
-price observations. This module does not authenticate a remote market-data feed.
+price observations. Observation age is measured against the desk's trusted
+clock. This module does not authenticate a remote market-data feed.
 """
 from __future__ import annotations
 
@@ -32,10 +33,18 @@ class GuardedPaperController:
         self.approved_strategies = approved_strategies
         self.max_age_seconds = max_age_seconds
 
-    def valid_observation(self, observation: PriceObservation, *, now: datetime) -> bool:
-        if (not isinstance(now, datetime) or now.tzinfo is None or
+    def valid_observation(self, observation: PriceObservation, *,
+                          now: datetime | None = None) -> bool:
+        # Freshness is measured against the ledger's trusted clock; a caller
+        # may pass ``now`` but it must agree with that clock.
+        try:
+            now = self.desk.check_caller_time(now)
+        except ValueError:
+            return False
+        if (not isinstance(observation, PriceObservation) or
                 not isinstance(observation.timestamp, datetime) or
                 observation.timestamp.tzinfo is None or
+                observation.timestamp.utcoffset() is None or
                 observation.symbol not in {"BTC/USD", "ETH/USD"} or
                 type(observation.price) not in (int, float) or
                 not isfinite(observation.price) or observation.price <= 0):
@@ -46,7 +55,8 @@ class GuardedPaperController:
             return False
         return True
 
-    def observe(self, observation: PriceObservation, *, now: datetime) -> bool:
+    def observe(self, observation: PriceObservation, *,
+                now: datetime | None = None) -> bool:
         if not self.valid_observation(observation, now=now):
             return False
         self.desk.mark(observation.symbol, observation.price)
@@ -54,8 +64,10 @@ class GuardedPaperController:
 
     def reserve(self, order_id: str, *, strategy_id: str, symbol: str,
                 price: float, stop_price: float, quantity: float,
-                observation: PriceObservation, now: datetime) -> bool:
+                observation: PriceObservation, now: datetime | None = None) -> bool:
         if strategy_id not in self.approved_strategies:
+            return False
+        if not isinstance(observation, PriceObservation):
             return False
         if observation.symbol != symbol or observation.price != price:
             return False
@@ -70,7 +82,7 @@ class GuardedPaperController:
         return self.orders.cancel(order_id)
 
     def fill(self, order_id: str, *, strategy_id: str, observation: PriceObservation,
-             now: datetime) -> bool:
+             now: datetime | None = None) -> bool:
         """Require a new fresh observation and currently approved strategy at fill."""
         if strategy_id not in self.approved_strategies:
             return False

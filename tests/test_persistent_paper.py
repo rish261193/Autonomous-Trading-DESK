@@ -14,7 +14,11 @@ class PersistentPaperTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.path = str(Path(self.temp.name) / "paper.sqlite")
-        self.desk = PersistentPaperDesk(self.path)
+        # Audit change: the ledger now rejects caller times that disagree with
+        # its trusted clock, so tests advance an injected clock instead.
+        self.now = datetime.now(timezone.utc)
+        self.clock = lambda: self.now
+        self.desk = PersistentPaperDesk(self.path, clock=self.clock)
         self.order = dict(strategy_id="momentum-v1", symbol="BTC/USD",
                           price=100, stop_price=95, quantity=1,
                           strategy_authorized=True, market_data_fresh=True)
@@ -58,19 +62,22 @@ class PersistentPaperTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.desk.reset_daily_baseline()
         tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
+        self.now = tomorrow
         self.assertTrue(self.desk.roll_utc_day(now=tomorrow))
         self.assertFalse(self.desk.roll_utc_day(now=tomorrow))
-        state = PersistentPaperDesk(self.path).snapshot()
+        state = PersistentPaperDesk(self.path, clock=self.clock).snapshot()
         self.assertEqual(state.day_start_equity_usd, 502)
         self.assertEqual(len(state.positions), 1)
 
     def test_utc_roll_survives_restart_and_rejects_rollback(self):
         tomorrow = datetime.now(timezone.utc) + timedelta(days=1)
+        self.now = tomorrow
         self.assertTrue(self.desk.roll_utc_day(now=tomorrow))
-        restarted = PersistentPaperDesk(self.path)
+        restarted = PersistentPaperDesk(self.path, clock=self.clock)
         self.assertFalse(restarted.roll_utc_day(now=tomorrow))
-        with self.assertRaises(ValueError):
-            restarted.roll_utc_day(now=tomorrow - timedelta(days=1))
+        self.now = tomorrow - timedelta(days=1)
+        with self.assertRaisesRegex(ValueError, "rollback"):
+            restarted.roll_utc_day()
 
     def test_reconciliation_rejects_tampered_position_risk(self):
         self.assertTrue(self.orders.reserve("entry", **self.order))

@@ -1,18 +1,33 @@
 name: Python unit tests
 on:
   push:
+    branches: [main]
   pull_request:
+permissions:
+  contents: read
+
+# A branch can receive several commits while an earlier matrix is still running.
+# Keep only the newest run for each ref/event; never cancel main's checks.
+concurrency:
+  group: unit-tests-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 jobs:
   test:
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.11', '3.13']
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
       - name: Install package
         run: python -m pip install -e .
       - name: Compile Python source and tests
         run: python -m compileall -q src tests
-      - name: Run unit tests
+      - name: Run unit tests (including adversarial and resilience)
         run: python -m unittest discover -s tests -v
