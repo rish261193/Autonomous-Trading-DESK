@@ -24,7 +24,9 @@ class MarketDataCircuitBreaker:
         self._source = source
         self._threshold = failure_threshold
         self._on_halt = on_halt
-        self._failures = 0
+        # Failure streaks must be independent: a healthy BTC feed cannot
+        # conceal repeated ETH outages.
+        self._failures_by_symbol = {}
         self._halted = False
         self._lock = Lock()
 
@@ -43,8 +45,8 @@ class MarketDataCircuitBreaker:
                 if quote is None:
                     raise ValueError("Missing quote")
             except Exception as source_error:
-                self._failures += 1
-                if self._failures >= self._threshold:
+                self._failures_by_symbol[symbol] = self._failures_by_symbol.get(symbol, 0) + 1
+                if self._failures_by_symbol[symbol] >= self._threshold:
                     self._halted = True
                     if self._on_halt is not None:
                         try:
@@ -54,11 +56,11 @@ class MarketDataCircuitBreaker:
                                 "Feed failed and persistent halt could not be confirmed"
                             ) from halt_error
                 raise
-            self._failures = 0
+            self._failures_by_symbol[symbol] = 0
             return quote
 
     def reset_by_owner(self):
         """Reset local counter only. NEVER clears a persistent ledger halt."""
         with self._lock:
             self._halted = False
-            self._failures = 0
+            self._failures_by_symbol.clear()
