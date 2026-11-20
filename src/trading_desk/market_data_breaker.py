@@ -59,6 +59,18 @@ class MarketDataCircuitBreaker:
             self._failures_by_symbol[symbol] = 0
             return quote
 
+    def observe_for_stops(self, symbol):
+        """Fetch a quote for stop monitoring without reopening entries.
+
+        The breaker and persistent halt remain engaged. The caller must
+        validate this quote before applying a mark.
+        """
+        with self._lock:
+            quote = self._source(symbol)
+            if quote is None:
+                raise ValueError("Missing recovery quote")
+            return quote
+
     def reset_by_owner(self):
         """Reset local counter only. NEVER clears a persistent ledger halt."""
         with self._lock:
